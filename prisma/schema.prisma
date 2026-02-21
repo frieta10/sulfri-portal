@@ -1,0 +1,115 @@
+// Sulfri Trainer Portal Database Schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// Admin Users Table
+model AdminUser {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         String   @default("admin")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("admin_users")
+}
+
+// Classes Table
+model Class {
+  id                   String         @id @default(cuid())
+  title                String
+  clientName           String         @map("client_name")
+  clientType           ClientType     @map("client_type")
+  topicCategory        String         @map("topic_category")
+  mode                 ClassMode
+  location             String?
+  startDatetime        DateTime       @map("start_datetime")
+  endDatetime          DateTime       @map("end_datetime")
+  notes                String?        @db.Text
+  status               ClassStatus    @default(UPCOMING)
+  joinCode             String         @unique @map("join_code")
+  joinEnabled          Boolean        @default(true) @map("join_enabled")
+  showOnPublicProfile  Boolean        @default(true) @map("show_on_public_profile")
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+
+  registrations        Registration[]
+
+  @@index([joinCode])
+  @@index([status])
+  @@index([startDatetime])
+  @@map("classes")
+}
+
+// Registrations Table
+model Registration {
+  id             String   @id @default(cuid())
+  classId        String   @map("class_id")
+  fullName       String   @map("full_name")
+  email          String
+  phone          String?
+  organization   String?
+  consentFlag    Boolean  @map("consent_flag")
+  registeredAt   DateTime @default(now()) @map("registered_at")
+
+  class          Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@index([classId])
+  @@index([email])
+  @@map("registrations")
+}
+
+// Downloads Table
+model Download {
+  id        String   @id @default(cuid())
+  title     String
+  fileUrl   String   @map("file_url")
+  isPublic  Boolean  @default(false) @map("is_public")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("downloads")
+}
+
+// Profile Settings Table (Single Row)
+model ProfileSettings {
+  id              String   @id @default("singleton")
+  displayName     String   @map("display_name")
+  headline        String?
+  bio             String?  @db.Text
+  email           String?
+  phone           String?
+  linkedinUrl     String?  @map("linkedin_url")
+  locationBase    String?  @map("location_base")
+  profilePhotoUrl String?  @map("profile_photo_url")
+  lastUpdatedAt   DateTime @updatedAt @map("last_updated_at")
+
+  @@map("profile_settings")
+}
+
+// Enums
+enum ClientType {
+  INDIVIDUAL
+  CORPORATE
+  GOVERNMENT
+  ACADEMIC
+}
+
+enum ClassMode {
+  ONLINE
+  IN_PERSON
+  HYBRID
+}
+
+enum ClassStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}

@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm run prisma:seed:*)",
+      "Bash(node -e:*)",
+      "Bash(pkill:*)",
+      "Bash(npx next build:*)",
+      "Bash(npm ls:*)",
+      "Bash(SUPER_ADMIN_EMAIL=admin@sulfri.com SUPER_ADMIN_PASSWORD=Sulfri@2024 SUPER_ADMIN_NAME=\"Sulfri Admin\" npx tsx:*)"
+    ]
+  }
+}
