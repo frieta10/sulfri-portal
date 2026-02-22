@@ -13,7 +13,7 @@ Rules:
 - If missing context, request exact file paths
 
 Task:
-Implement RBAC middleware for admin routes
+TEST: commit+push agent packs
 
 Output format:
 Context Files Selected:

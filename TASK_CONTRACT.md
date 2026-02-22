@@ -2,7 +2,7 @@
 # Task Contract (Auto-generated)
 
 ## Objective
-Implement RBAC middleware for admin routes
+TEST: commit+push agent packs
 
 ## Definition of Done
 - [ ] Implementation completed
