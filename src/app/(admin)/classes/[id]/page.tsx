@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { use, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ClassForm } from "@/components/admin/class-form"
@@ -31,7 +31,8 @@ type ClassDetail = {
   }
 }
 
-export default function ClassDetailPage({ params }: { params: { id: string } }) {
+export default function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const [classData, setClassData] = useState<ClassDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -40,11 +41,11 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
 
   useEffect(() => {
     fetchClass()
-  }, [params.id])
+  }, [id])
 
   const fetchClass = async () => {
     try {
-      const response = await fetch(`/api/classes/${params.id}`)
+      const response = await fetch(`/api/classes/${id}`)
 
       if (!response.ok) {
         throw new Error("Failed to fetch class")
@@ -63,7 +64,7 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
 
   const handleUpdate = async (data: ClassFormData) => {
     try {
-      const response = await fetch(`/api/classes/${params.id}`, {
+      const response = await fetch(`/api/classes/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -93,7 +94,7 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
 
     try {
       setDeleting(true)
-      const response = await fetch(`/api/classes/${params.id}`, {
+      const response = await fetch(`/api/classes/${id}`, {
         method: "DELETE",
       })
 

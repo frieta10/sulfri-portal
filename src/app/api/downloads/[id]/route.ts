@@ -7,9 +7,10 @@ import { deleteFile } from "@/lib/storage"
 // PUT /api/downloads/[id] - Toggle visibility
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
 
     if (!session) {
@@ -19,7 +20,7 @@ export async function PUT(
     const body = await request.json()
 
     const download = await prisma.download.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         title: body.title,
         isPublic: body.isPublic,
@@ -39,9 +40,10 @@ export async function PUT(
 // DELETE /api/downloads/[id] - Delete a download
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
 
     if (!session) {
@@ -49,23 +51,21 @@ export async function DELETE(
     }
 
     const download = await prisma.download.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!download) {
       return NextResponse.json({ error: "Download not found" }, { status: 404 })
     }
 
-    // Delete file from storage
     try {
       await deleteFile(download.fileUrl)
     } catch (err) {
-      // File might not exist, continue with database deletion
       console.warn("Could not delete file from storage:", err)
     }
 
     await prisma.download.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ message: "Download deleted successfully" })

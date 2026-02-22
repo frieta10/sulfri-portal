@@ -6,11 +6,13 @@ import { checkRateLimit } from "@/lib/utils/rate-limit"
 // GET /api/join/[code] - Get class info by join code
 export async function GET(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
+    const { code } = await params
+
     const classItem = await prisma.class.findUnique({
-      where: { joinCode: params.code },
+      where: { joinCode: code },
       select: {
         id: true,
         title: true,
@@ -42,7 +44,6 @@ export async function GET(
       )
     }
 
-    // Check if class is in the past
     if (classItem.status === "COMPLETED" || classItem.status === "CANCELLED") {
       return NextResponse.json(
         { error: `This class has been ${classItem.status.toLowerCase()}.` },
@@ -65,13 +66,14 @@ export async function GET(
 // POST /api/join/[code] - Submit registration
 export async function POST(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
+    const { code } = await params
+
     // Get client IP for rate limiting
     const ip = request.headers.get("x-forwarded-for") || "unknown"
 
-    // Rate limiting: 10 registrations per IP per hour
     if (!checkRateLimit(`registration:${ip}`, 10, 60 * 60 * 1000)) {
       return NextResponse.json(
         {
@@ -81,9 +83,8 @@ export async function POST(
       )
     }
 
-    // Find the class
     const classItem = await prisma.class.findUnique({
-      where: { joinCode: params.code },
+      where: { joinCode: code },
     })
 
     if (!classItem) {
@@ -107,11 +108,9 @@ export async function POST(
       )
     }
 
-    // Parse and validate request body
     const body = await request.json()
     const validatedData = registrationSchema.parse(body)
 
-    // Check for duplicate email registration
     const existingRegistration = await prisma.registration.findFirst({
       where: {
         classId: classItem.id,
@@ -128,7 +127,6 @@ export async function POST(
       )
     }
 
-    // Create the registration
     const registration = await prisma.registration.create({
       data: {
         classId: classItem.id,

@@ -10,7 +10,9 @@
       "Bash(pkill:*)",
       "Bash(npx next build:*)",
       "Bash(npm ls:*)",
-      "Bash(SUPER_ADMIN_EMAIL=admin@sulfri.com SUPER_ADMIN_PASSWORD=Sulfri@2024 SUPER_ADMIN_NAME=\"Sulfri Admin\" npx tsx:*)"
+      "Bash(SUPER_ADMIN_EMAIL=admin@sulfri.com SUPER_ADMIN_PASSWORD=Sulfri@2024 SUPER_ADMIN_NAME=\"Sulfri Admin\" npx tsx:*)",
+      "Bash(npx vercel logs:*)",
+      "Bash(printf:*)"
     ]
   }
 }

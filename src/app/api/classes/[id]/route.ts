@@ -7,9 +7,10 @@ import { updateClassSchema } from "@/lib/validations/class"
 // GET /api/classes/[id] - Get a single class
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
 
     if (!session) {
@@ -17,7 +18,7 @@ export async function GET(
     }
 
     const classItem = await prisma.class.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         _count: {
           select: { registrations: true },
@@ -42,9 +43,10 @@ export async function GET(
 // PUT /api/classes/[id] - Update a class
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
 
     if (!session) {
@@ -52,23 +54,18 @@ export async function PUT(
     }
 
     const body = await request.json()
-
-    // Validate the request body
     const validatedData = updateClassSchema.parse(body)
 
-    // Check if class exists
     const existingClass = await prisma.class.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!existingClass) {
       return NextResponse.json({ error: "Class not found" }, { status: 404 })
     }
 
-    // Prepare update data
     const updateData: any = { ...validatedData }
 
-    // Convert date strings to Date objects if provided
     if (validatedData.startDatetime) {
       updateData.startDatetime = new Date(validatedData.startDatetime)
     }
@@ -76,9 +73,8 @@ export async function PUT(
       updateData.endDatetime = new Date(validatedData.endDatetime)
     }
 
-    // Update the class
     const updatedClass = await prisma.class.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       include: {
         _count: {
@@ -108,27 +104,26 @@ export async function PUT(
 // DELETE /api/classes/[id] - Delete a class
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Check if class exists
     const existingClass = await prisma.class.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!existingClass) {
       return NextResponse.json({ error: "Class not found" }, { status: 404 })
     }
 
-    // Delete the class (registrations will be cascade deleted)
     await prisma.class.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ message: "Class deleted successfully" })

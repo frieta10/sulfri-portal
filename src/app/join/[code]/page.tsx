@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { use, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { registrationSchema, type RegistrationFormData } from "@/lib/validations/registration"
@@ -24,7 +24,8 @@ type ClassInfo = {
   }
 }
 
-export default function JoinClassPage({ params }: { params: { code: string } }) {
+export default function JoinClassPage({ params }: { params: Promise<{ code: string }> }) {
+  const { code } = use(params)
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -45,14 +46,14 @@ export default function JoinClassPage({ params }: { params: { code: string } }) 
 
   useEffect(() => {
     fetchClassInfo()
-  }, [params.code])
+  }, [code])
 
   const fetchClassInfo = async () => {
     try {
       setLoading(true)
       setError(null)
 
-      const response = await fetch(`/api/join/${params.code}`)
+      const response = await fetch(`/api/join/${code}`)
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -74,7 +75,7 @@ export default function JoinClassPage({ params }: { params: { code: string } }) 
       setSubmitting(true)
       setError(null)
 
-      const response = await fetch(`/api/join/${params.code}`, {
+      const response = await fetch(`/api/join/${code}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

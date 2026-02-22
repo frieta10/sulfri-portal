@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { use, useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,8 +27,9 @@ type ClassInfo = {
 export default function RegistrationsPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = use(params)
   const [registrations, setRegistrations] = useState<Registration[]>([])
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null)
   const [loading, setLoading] = useState(true)
@@ -37,7 +38,7 @@ export default function RegistrationsPage({
 
   useEffect(() => {
     fetchRegistrations()
-  }, [params.id])
+  }, [id])
 
   const fetchRegistrations = async (searchQuery?: string) => {
     try {
@@ -49,7 +50,7 @@ export default function RegistrationsPage({
       }
 
       const response = await fetch(
-        `/api/classes/${params.id}/registrations?${params_url.toString()}`
+        `/api/classes/${id}/registrations?${params_url.toString()}`
       )
 
       if (!response.ok) {
@@ -74,7 +75,7 @@ export default function RegistrationsPage({
 
   const handleExport = () => {
     // Trigger CSV download
-    window.open(`/api/classes/${params.id}/export`, "_blank")
+    window.open(`/api/classes/${id}/export`, "_blank")
     toast.success("Exporting registrations to CSV...")
   }
 
@@ -83,7 +84,7 @@ export default function RegistrationsPage({
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
-          <Link href={`/classes/${params.id}`}>
+          <Link href={`/classes/${id}`}>
             <Button variant="outline" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Class

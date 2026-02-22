@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['@vercel/blob'],
-  },
+  serverExternalPackages: ['@vercel/blob'],
   images: {
     remotePatterns: [
       {

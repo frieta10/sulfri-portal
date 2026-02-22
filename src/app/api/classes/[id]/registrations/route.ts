@@ -6,18 +6,18 @@ import { prisma } from "@/lib/prisma"
 // GET /api/classes/[id]/registrations - List registrations for a class
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Check if class exists
     const classItem = await prisma.class.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true, title: true, joinCode: true },
     })
 
@@ -28,9 +28,8 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const search = searchParams.get("search")
 
-    const where: any = { classId: params.id }
+    const where: any = { classId: id }
 
-    // Search by name or email
     if (search) {
       where.OR = [
         { fullName: { contains: search, mode: "insensitive" } },
