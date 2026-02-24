@@ -88,6 +88,7 @@ model ProfileSettings {
   linkedinUrl     String?  @map("linkedin_url")
   locationBase    String?  @map("location_base")
   profilePhotoUrl String?  @map("profile_photo_url")
+  credlyUsername  String?  @map("credly_username")
   lastUpdatedAt   DateTime @updatedAt @map("last_updated_at")
 
   @@map("profile_settings")

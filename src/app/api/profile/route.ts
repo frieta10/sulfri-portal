@@ -52,10 +52,12 @@ export async function PUT(request: NextRequest) {
         email: validatedData.email || null,
         linkedinUrl: validatedData.linkedinUrl || null,
         profilePhotoUrl: validatedData.profilePhotoUrl || null,
+        credlyUsername: validatedData.credlyUsername || null,
       },
       create: {
         id: "singleton",
         ...validatedData,
+        credlyUsername: validatedData.credlyUsername || null,
       },
     })
 

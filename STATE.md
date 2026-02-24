@@ -8,7 +8,7 @@
 Deliver the current task safely and keep system stable.
 
 ## In Progress
-- TEST: commit+push agent packs
+- TEST: Add RBAC middleware for /admin routes
 
 ## Completed
 - (none recorded yet)

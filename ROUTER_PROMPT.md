@@ -7,7 +7,7 @@ Authoritative context:
 - TASK_CONTRACT.md
 
 Task:
-TEST: commit+push agent packs
+TEST: Add RBAC middleware for /admin routes
 
 Routing rules:
 - Claude: acceptance criteria, tests, review diffs

@@ -12,7 +12,9 @@
       "Bash(npm ls:*)",
       "Bash(SUPER_ADMIN_EMAIL=admin@sulfri.com SUPER_ADMIN_PASSWORD=Sulfri@2024 SUPER_ADMIN_NAME=\"Sulfri Admin\" npx tsx:*)",
       "Bash(npx vercel logs:*)",
-      "Bash(printf:*)"
+      "Bash(printf:*)",
+      "Bash(DATABASE_URL=\"postgres://985165aa4556e2022a19c865b91472c99da4fcdf36adbee78da38e13c666a897:sk_Vxsb_uAv04PcKOq62nhx0@db.prisma.io:5432/postgres?sslmode=require\" npx prisma migrate deploy:*)",
+      "Bash(DATABASE_URL=\"postgres://985165aa4556e2022a19c865b91472c99da4fcdf36adbee78da38e13c666a897:sk_Vxsb_uAv04PcKOq62nhx0@db.prisma.io:5432/postgres?sslmode=require\" SUPER_ADMIN_EMAIL=\"admin@sulfri.com\" SUPER_ADMIN_PASSWORD=\"Sulfri@2024\" SUPER_ADMIN_NAME=\"Sulfri Admin\" npx tsx scripts/create-admin.ts create)"
     ]
   }
 }

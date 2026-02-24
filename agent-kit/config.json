@@ -1,0 +1,13 @@
+{
+  "models": {
+    "claude": { "role": "Spec & Review", "max_files": 6 },
+    "gemini": { "role": "Architecture & Integration", "max_files": 6 },
+    "kimi": { "role": "Implementation", "max_files": 8 }
+  },
+  "defaults": {
+    "truth_pack_max_chars": 9000,
+    "state_max_chars": 5000,
+    "task_contract_max_chars": 6000
+  },
+  "always_include": ["SYSTEM.md", "STATE.md", "TASK_CONTRACT.md"]
+}

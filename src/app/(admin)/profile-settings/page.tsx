@@ -47,6 +47,7 @@ export default function ProfileSettingsPage() {
           linkedinUrl: data.linkedinUrl || "",
           locationBase: data.locationBase || "",
           profilePhotoUrl: data.profilePhotoUrl || "",
+          credlyUsername: data.credlyUsername || "",
         })
       }
     } catch (error) {
@@ -156,6 +157,21 @@ export default function ProfileSettingsPage() {
                 <Input id="linkedinUrl" {...register("linkedinUrl")} placeholder="https://linkedin.com/in/yourname" disabled={saving} />
                 {errors.linkedinUrl && <p className="text-sm text-red-600 mt-1">{errors.linkedinUrl.message}</p>}
               </div>
+            </div>
+            <div>
+              <Label htmlFor="credlyUsername">
+                Credly Username
+                <span className="ml-2 text-xs font-normal text-slate-500">(for displaying verified badges)</span>
+              </Label>
+              <Input 
+                id="credlyUsername" 
+                {...register("credlyUsername")} 
+                placeholder="e.g., mohd-sulfri (from credly.com/users/your-username/badges)" 
+                disabled={saving} 
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Your Credly username from your public profile URL. Leave empty to hide badges section.
+              </p>
             </div>
           </CardContent>
         </Card>
