@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git push --set-upstream origin test/agent-kit)",
+      "Bash(vercel --prod)"
+    ]
+  }
+}

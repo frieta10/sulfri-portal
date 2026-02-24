@@ -153,7 +153,7 @@ export function TrainingExpertise({ defaultExpanded = false }: TrainingExpertise
         return (
           <Card
             key={category.id}
-            className={`overflow-hidden transition-all duration-300 border-0 shadow-sm hover:shadow-md ${category.bgColor}`}
+            className={`overflow-hidden transition-all duration-300 border border-slate-800 bg-slate-900/50 hover:border-slate-700 hover:bg-slate-800/50`}
           >
             {/* Category Header */}
             <button
@@ -163,11 +163,11 @@ export function TrainingExpertise({ defaultExpanded = false }: TrainingExpertise
               <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-xl bg-white shadow-sm ${category.color}`}>
+                    <div className={`p-3 rounded-xl bg-slate-950 shadow-sm ${category.color}`}>
                       {category.icon}
                     </div>
                     <div className="text-left">
-                      <h3 className={`font-bold text-lg ${category.color}`}>
+                      <h3 className={`font-bold text-lg ${category.color.replace('text-', 'text-').replace('700', '400').replace('600', '400')}`}>
                         {category.title}
                       </h3>
                       <p className="text-sm text-slate-500">
@@ -236,7 +236,7 @@ export function TrainingExpertise({ defaultExpanded = false }: TrainingExpertise
                 : trainingCategories.map((c) => c.id)
             )
           }
-          className="text-sm text-slate-500 hover:text-amber-600 transition-colors"
+          className="text-sm text-slate-500 hover:text-blue-400 transition-colors"
         >
           {expandedCategories.length === trainingCategories.length
             ? "Collapse all categories"

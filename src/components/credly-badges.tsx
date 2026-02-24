@@ -66,22 +66,22 @@ export function CredlyBadges({
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-        <p className="text-slate-500 mt-4">Loading certifications...</p>
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        <p className="text-slate-400 mt-4">Loading certifications...</p>
       </div>
     )
   }
 
   if (error) {
     return (
-      <Card className="bg-red-50 border-red-200">
+      <Card className="bg-red-950/30 border-red-500/30">
         <CardContent className="py-8 text-center">
-          <p className="text-red-600">{error}</p>
+          <p className="text-red-400">{error}</p>
           <Button 
             variant="outline" 
             size="sm" 
             onClick={fetchBadges}
-            className="mt-4"
+            className="mt-4 border-red-500/30 text-red-400 hover:bg-red-950/50"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Retry
@@ -93,10 +93,10 @@ export function CredlyBadges({
 
   if (badges.length === 0) {
     return (
-      <Card className="bg-slate-50 border-slate-200">
+      <Card className="bg-slate-900/50 border-slate-800">
         <CardContent className="py-8 text-center">
-          <Award className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-500">No badges found for this user.</p>
+          <Award className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+          <p className="text-slate-400">No badges found for this user.</p>
         </CardContent>
       </Card>
     )
@@ -113,11 +113,11 @@ export function CredlyBadges({
         {displayedBadges.map((badge) => (
           <div
             key={badge.id}
-            className="group relative bg-white rounded-2xl border border-slate-200 p-4 hover:border-amber-400 hover:shadow-lg transition-all duration-300 cursor-pointer"
+            className="group relative bg-slate-900/50 rounded-2xl border border-slate-800 p-4 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer"
             onClick={() => setSelectedBadge(badge)}
           >
             {/* Badge Image */}
-            <div className="relative aspect-square mb-3 overflow-hidden rounded-xl bg-gradient-to-br from-slate-50 to-slate-100">
+            <div className="relative aspect-square mb-3 overflow-hidden rounded-xl bg-gradient-to-br from-slate-800 to-slate-900">
               <img
                 src={badge.imageUrl}
                 alt={badge.name}
@@ -130,7 +130,7 @@ export function CredlyBadges({
             </div>
             
             {/* Badge Info */}
-            <h4 className="font-semibold text-sm text-slate-900 line-clamp-2 group-hover:text-amber-700 transition-colors">
+            <h4 className="font-semibold text-sm text-slate-100 line-clamp-2 group-hover:text-blue-400 transition-colors">
               {badge.name}
             </h4>
             <p className="text-xs text-slate-500 mt-1">
@@ -144,12 +144,12 @@ export function CredlyBadges({
             {showSkills && displayStyle !== "compact" && badge.skills.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
                 {badge.skills.slice(0, 2).map((skill, idx) => (
-                  <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0">
+                  <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0 bg-slate-800 text-slate-300 border-slate-700">
                     {skill}
                   </Badge>
                 ))}
                 {badge.skills.length > 2 && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-slate-700 text-slate-500">
                     +{badge.skills.length - 2}
                   </Badge>
                 )}
@@ -166,7 +166,7 @@ export function CredlyBadges({
             href={`https://www.credly.com/users/${username}/badges`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-amber-600 hover:text-amber-700 font-medium transition-colors"
+            className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-medium transition-colors"
           >
             View all {badges.length} badges on Credly
             <ExternalLink className="w-4 h-4" />
@@ -259,6 +259,7 @@ export function CredlyBadges({
 }
 
 // Setup Guide Component
+// Setup Guide Component - Hidden by default, can be shown in admin only
 export function CredlySetupGuide() {
   return (
     <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">

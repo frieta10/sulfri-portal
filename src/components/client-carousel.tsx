@@ -93,8 +93,8 @@ export function ClientCarousel({ speed = 40, pauseOnHover = true }: ClientCarous
   return (
     <div className="relative overflow-hidden py-4">
       {/* Gradient Masks */}
-      <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none" />
+      <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-slate-950 to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-slate-950 to-transparent z-10 pointer-events-none" />
       
       <div className="overflow-hidden" ref={emblaRef}>
         <div 
@@ -108,7 +108,7 @@ export function ClientCarousel({ speed = 40, pauseOnHover = true }: ClientCarous
               key={`${client.name}-${idx}`}
               className="flex-shrink-0 px-3"
             >
-              <div className="group flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-slate-200 hover:border-amber-400 hover:shadow-md transition-all duration-300 cursor-default min-w-[200px]">
+              <div className="group flex items-center gap-3 px-4 py-3 bg-slate-900/50 rounded-xl border border-slate-800 hover:border-blue-500/50 hover:bg-slate-800/50 transition-all duration-300 cursor-default min-w-[200px]">
                 {/* Logo/Initials */}
                 <div className={`flex-shrink-0 w-12 h-12 ${client.color} rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm`}>
                   {client.initials}
@@ -116,11 +116,11 @@ export function ClientCarousel({ speed = 40, pauseOnHover = true }: ClientCarous
                 
                 {/* Info */}
                 <div className="min-w-0">
-                  <p className="font-semibold text-slate-900 text-sm truncate">
+                  <p className="font-semibold text-slate-100 text-sm truncate">
                     {client.name}
                   </p>
                   <div className="flex items-center gap-1 mt-0.5">
-                    <span className="text-slate-400">
+                    <span className="text-slate-500">
                       {getTypeIcon(client.type)}
                     </span>
                     <span className="text-xs text-slate-500">

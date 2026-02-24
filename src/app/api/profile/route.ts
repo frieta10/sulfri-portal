@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { profileSchema } from "@/lib/validations/profile"
+
+// Helper to clean empty strings
+function cleanValue(value: unknown): string | null | undefined {
+  if (value === "") return null
+  if (value === undefined) return undefined
+  return value as string | null
+}
 
 // GET /api/profile - Get profile settings (public)
 export async function GET() {
@@ -16,8 +22,8 @@ export async function GET() {
       profile = await prisma.profileSettings.create({
         data: {
           id: "singleton",
-          displayName: "Sulfri Trainer",
-          headline: "Professional Trainer & Consultant",
+          displayName: "Mohd Sulfri Mohd Harris",
+          headline: "Senior Corporate Trainer & Project Management Expert",
         },
       })
     }
@@ -42,35 +48,33 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const validatedData = profileSchema.parse(body)
+
+    // Build update data, cleaning empty strings
+    const updateData: Record<string, string | null | undefined> = {}
+    
+    if (body.displayName !== undefined) updateData.displayName = body.displayName
+    if (body.headline !== undefined) updateData.headline = cleanValue(body.headline)
+    if (body.bio !== undefined) updateData.bio = cleanValue(body.bio)
+    if (body.email !== undefined) updateData.email = cleanValue(body.email)
+    if (body.phone !== undefined) updateData.phone = cleanValue(body.phone)
+    if (body.linkedinUrl !== undefined) updateData.linkedinUrl = cleanValue(body.linkedinUrl)
+    if (body.locationBase !== undefined) updateData.locationBase = cleanValue(body.locationBase)
+    if (body.profilePhotoUrl !== undefined) updateData.profilePhotoUrl = cleanValue(body.profilePhotoUrl)
+    if (body.credlyUsername !== undefined) updateData.credlyUsername = cleanValue(body.credlyUsername)
 
     const profile = await prisma.profileSettings.upsert({
       where: { id: "singleton" },
-      update: {
-        ...validatedData,
-        // Convert empty strings to null
-        email: validatedData.email || null,
-        linkedinUrl: validatedData.linkedinUrl || null,
-        profilePhotoUrl: validatedData.profilePhotoUrl || null,
-        credlyUsername: validatedData.credlyUsername || null,
-      },
+      update: updateData,
       create: {
         id: "singleton",
-        ...validatedData,
-        credlyUsername: validatedData.credlyUsername || null,
+        displayName: updateData.displayName || "Sulfri Trainer",
+        ...updateData,
       },
     })
 
     return NextResponse.json(profile)
   } catch (error: any) {
     console.error("Error updating profile:", error)
-
-    if (error.name === "ZodError") {
-      return NextResponse.json(
-        { error: "Validation error", details: error.errors },
-        { status: 400 }
-      )
-    }
 
     return NextResponse.json(
       { error: "Failed to update profile" },
