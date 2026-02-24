@@ -6,9 +6,9 @@ export const profileSchema = z.object({
   bio: z.string().optional().nullable(),
   email: z.string().email("Invalid email").optional().nullable().or(z.literal("")),
   phone: z.string().optional().nullable(),
-  linkedinUrl: z.string().url("Invalid URL").optional().nullable().or(z.literal("")),
+  linkedinUrl: z.string().optional().nullable().or(z.literal("")),
   locationBase: z.string().optional().nullable(),
-  profilePhotoUrl: z.string().url("Invalid URL").optional().nullable().or(z.literal("")),
+  profilePhotoUrl: z.string().optional().nullable().or(z.literal("")),
   credlyUsername: z.string().optional().nullable(),
 })
 
