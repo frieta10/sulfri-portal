@@ -86,12 +86,35 @@ function parseSingleOB3(data: any): OB3Credential | null {
   
   // Format 1: Standard VerifiableCredential with credentialSubject.achievement
   if (data.credentialSubject?.achievement) {
-    return data as OB3Credential
+    // Ensure required fields have defaults
+    return {
+      "@context": data["@context"] || ["https://www.w3.org/2018/credentials/v1"],
+      id: data.id || `urn:uuid:${Date.now()}`,
+      type: Array.isArray(data.type) ? data.type : ["VerifiableCredential"],
+      issuer: data.issuer,
+      validFrom: data.validFrom || data.issuedOn || new Date().toISOString(),
+      validUntil: data.validUntil || data.expires,
+      credentialSubject: data.credentialSubject,
+      name: data.name,
+      description: data.description,
+      image: data.image,
+    } as OB3Credential
   }
   
   // Format 2: Credly format with credentialSubject but nested differently
   if (data.credentialSubject?.type === "AchievementSubject" && data.credentialSubject.achievement) {
-    return data as OB3Credential
+    return {
+      "@context": data["@context"] || ["https://www.w3.org/2018/credentials/v1"],
+      id: data.id || `urn:uuid:${Date.now()}`,
+      type: Array.isArray(data.type) ? data.type : ["VerifiableCredential"],
+      issuer: data.issuer,
+      validFrom: data.validFrom || data.issuedOn || new Date().toISOString(),
+      validUntil: data.validUntil || data.expires,
+      credentialSubject: data.credentialSubject,
+      name: data.name,
+      description: data.description,
+      image: data.image,
+    } as OB3Credential
   }
   
   // Format 3: Simplified format (some Credly exports)
@@ -127,7 +150,7 @@ function parseSingleOB3(data: any): OB3Credential | null {
         id: data.credentialSubject?.id || `did:example:${Date.now()}`,
         type: "AchievementSubject",
         achievement: {
-          id: data.id,
+          id: data.id || `urn:uuid:${Date.now()}`,
           type: ["Achievement"],
           name: data.name,
           description: data.description,
@@ -264,16 +287,8 @@ export function extractBadgeFromOB3(credential: OB3Credential): {
  * Full verification would require cryptographic validation
  */
 export function validateOB3Credential(credential: OB3Credential): boolean {
-  // Check required fields - be more flexible
-  if (!credential.id) return false
+  // Check issuer exists
   if (!credential.issuer) return false
-  
-  // Must have either validFrom or issuedOn
-  if (!credential.validFrom && !(credential as any).issuedOn) return false
-  
-  // Must have credentialSubject with achievement OR achievement at root
-  const hasAchievement = credential.credentialSubject?.achievement || (credential as any).achievement
-  if (!hasAchievement) return false
   
   // Check issuer name
   const issuerName = typeof credential.issuer === 'string'
@@ -281,6 +296,10 @@ export function validateOB3Credential(credential: OB3Credential): boolean {
     : credential.issuer.name
   
   if (!issuerName) return false
+  
+  // Must have credentialSubject with achievement OR achievement at root
+  const hasAchievement = credential.credentialSubject?.achievement || (credential as any).achievement
+  if (!hasAchievement) return false
   
   // Check achievement name - look in multiple places
   const achievement = credential.credentialSubject?.achievement || (credential as any).achievement
