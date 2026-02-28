@@ -24,11 +24,12 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.credly.com",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: https:",
+              "img-src 'self' data: https: https://*.credly.com https://cdn.credly.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "connect-src 'self' https://*.public.blob.vercel-storage.com",
+              "connect-src 'self' https://*.public.blob.vercel-storage.com https://www.credly.com",
+              "frame-src 'self' https://www.credly.com",
               "frame-ancestors 'none'",
             ].join('; ')
           }

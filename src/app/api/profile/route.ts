@@ -4,21 +4,22 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
 // Helper to clean empty strings
-function cleanValue(value: unknown): string | null | undefined {
-  if (value === "") return null
-  if (value === undefined) return undefined
-  return value as string | null
+function cleanValue(value: unknown): string | null {
+  if (value === "" || value === undefined || value === null) return null
+  return String(value)
 }
 
 // GET /api/profile - Get profile settings (public)
 export async function GET() {
   try {
+    console.log("Fetching profile...")
+    
     let profile = await prisma.profileSettings.findUnique({
       where: { id: "singleton" },
     })
 
     if (!profile) {
-      // Create default profile if not exists
+      console.log("Creating default profile...")
       profile = await prisma.profileSettings.create({
         data: {
           id: "singleton",
@@ -28,9 +29,12 @@ export async function GET() {
       })
     }
 
+    console.log("Profile fetched successfully:", profile.displayName)
     return NextResponse.json(profile)
-  } catch (error) {
-    console.error("Error fetching profile:", error)
+    
+  } catch (error: any) {
+    console.error("Error fetching profile:", error.message, error.code)
+    
     return NextResponse.json(
       { error: "Failed to fetch profile" },
       { status: 500 }
@@ -41,18 +45,21 @@ export async function GET() {
 // PUT /api/profile - Update profile settings (admin only)
 export async function PUT(request: NextRequest) {
   try {
+    console.log("Updating profile...")
+    
     const session = await getServerSession(authOptions)
-
     if (!session) {
+      console.log("Unauthorized update attempt")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const body = await request.json()
+    console.log("Update data received:", Object.keys(body))
 
-    // Build update data, cleaning empty strings
-    const updateData: Record<string, string | null | undefined> = {}
+    // Build update data - only include defined fields
+    const updateData: Record<string, string | null> = {}
     
-    if (body.displayName !== undefined) updateData.displayName = body.displayName
+    if (body.displayName !== undefined) updateData.displayName = cleanValue(body.displayName) || "Sulfri Trainer"
     if (body.headline !== undefined) updateData.headline = cleanValue(body.headline)
     if (body.bio !== undefined) updateData.bio = cleanValue(body.bio)
     if (body.email !== undefined) updateData.email = cleanValue(body.email)
@@ -60,7 +67,8 @@ export async function PUT(request: NextRequest) {
     if (body.linkedinUrl !== undefined) updateData.linkedinUrl = cleanValue(body.linkedinUrl)
     if (body.locationBase !== undefined) updateData.locationBase = cleanValue(body.locationBase)
     if (body.profilePhotoUrl !== undefined) updateData.profilePhotoUrl = cleanValue(body.profilePhotoUrl)
-    if (body.credlyUsername !== undefined) updateData.credlyUsername = cleanValue(body.credlyUsername)
+
+    console.log("Prepared update data:", Object.keys(updateData))
 
     const profile = await prisma.profileSettings.upsert({
       where: { id: "singleton" },
@@ -72,12 +80,14 @@ export async function PUT(request: NextRequest) {
       },
     })
 
+    console.log("Profile updated successfully")
     return NextResponse.json(profile)
+    
   } catch (error: any) {
-    console.error("Error updating profile:", error)
+    console.error("Error updating profile:", error.message, error.code)
 
     return NextResponse.json(
-      { error: "Failed to update profile" },
+      { error: error.message || "Failed to update profile" },
       { status: 500 }
     )
   }

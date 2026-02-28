@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,7 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, ExternalLink } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import { Plus, Search, ExternalLink, Upload, Download, FileSpreadsheet, X, Loader2 } from "lucide-react"
 import toast from "react-hot-toast"
 
 type Class = {
@@ -21,6 +28,7 @@ type Class = {
   title: string
   clientName: string
   clientType: string
+  clientLogoUrl: string | null
   status: string
   mode: string
   startDatetime: string
@@ -36,6 +44,10 @@ export default function ClassesPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [showBulkImport, setShowBulkImport] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [importResults, setImportResults] = useState<any>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchClasses()
@@ -74,6 +86,52 @@ export default function ClassesPage() {
     fetchClasses()
   }
 
+  const downloadTemplate = () => {
+    window.open("/api/classes/bulk", "_blank")
+  }
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setImporting(true)
+    setImportResults(null)
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const response = await fetch("/api/classes/bulk", {
+        method: "POST",
+        body: formData,
+      })
+
+      const results = await response.json()
+
+      if (!response.ok) {
+        throw new Error(results.error || "Import failed")
+      }
+
+      setImportResults(results)
+      
+      if (results.success > 0) {
+        toast.success(`Successfully imported ${results.success} classes!`)
+        fetchClasses()
+      }
+      
+      if (results.failed > 0) {
+        toast.error(`${results.failed} classes failed to import`)
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to import classes")
+    } finally {
+      setImporting(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    }
+  }
+
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case "UPCOMING":
@@ -89,6 +147,32 @@ export default function ClassesPage() {
     }
   }
 
+  // Get client initials for avatar
+  const getClientInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase()
+  }
+
+  // Get color based on client type
+  const getClientColor = (type: string) => {
+    switch (type) {
+      case "GOVERNMENT":
+        return "bg-blue-500"
+      case "GLC":
+        return "bg-emerald-500"
+      case "CORPORATE":
+        return "bg-rose-500"
+      case "ACADEMIC":
+        return "bg-purple-500"
+      default:
+        return "bg-gray-500"
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -99,13 +183,120 @@ export default function ClassesPage() {
             Manage your training classes and registrations
           </p>
         </div>
-        <Link href="/classes/new">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Create Class
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowBulkImport(true)}>
+            <Upload className="w-4 h-4 mr-2" />
+            Bulk Import
           </Button>
-        </Link>
+          <Link href="/classes/new">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Class
+            </Button>
+          </Link>
+        </div>
       </div>
+
+      {/* Bulk Import Dialog */}
+      <Dialog open={showBulkImport} onOpenChange={setShowBulkImport}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Bulk Import Classes</DialogTitle>
+            <DialogDescription>
+              Upload a CSV file to import multiple classes at once. 
+              Dates can be in the past for completed classes.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Download Template */}
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+              <div className="flex items-center gap-3">
+                <FileSpreadsheet className="w-8 h-8 text-green-600" />
+                <div className="flex-1">
+                  <h4 className="font-medium">CSV Template</h4>
+                  <p className="text-sm text-slate-500">
+                    Download the template file with the correct column format
+                  </p>
+                </div>
+                <Button variant="outline" onClick={downloadTemplate}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+            </div>
+
+            {/* Upload Area */}
+            <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-slate-400 transition-colors">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <Upload className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+              <p className="text-sm text-slate-600 mb-2">
+                Click to upload or drag and drop
+              </p>
+              <p className="text-xs text-slate-400">CSV files only</p>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importing}
+              >
+                {importing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Importing...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Select CSV File
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Results */}
+            {importResults && (
+              <div className={`p-4 rounded-lg ${importResults.failed > 0 ? "bg-yellow-50 border border-yellow-200" : "bg-green-50 border border-green-200"}`}>
+                <h4 className="font-medium mb-2">
+                  Import Results: {importResults.success} success, {importResults.failed} failed
+                </h4>
+                
+                {importResults.errors.length > 0 && (
+                  <div className="mt-2 max-h-40 overflow-y-auto">
+                    <p className="text-sm font-medium text-red-600 mb-1">Errors:</p>
+                    <ul className="text-sm text-red-600 space-y-1">
+                      {importResults.errors.slice(0, 10).map((error: string, idx: number) => (
+                        <li key={idx}>• {error}</li>
+                      ))}
+                      {importResults.errors.length > 10 && (
+                        <li>... and {importResults.errors.length - 10} more errors</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* CSV Format Help */}
+            <div className="text-sm text-slate-500">
+              <p className="font-medium mb-1">Required columns:</p>
+              <code className="text-xs bg-slate-100 px-2 py-1 rounded">
+                title, clientName, clientType, topicCategory, mode
+              </code>
+              <p className="font-medium mt-2 mb-1">Optional columns:</p>
+              <code className="text-xs bg-slate-100 px-2 py-1 rounded">
+                clientLogoUrl, location, startDate, endDate, notes, status
+              </code>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Filters */}
       <Card>
@@ -200,10 +391,24 @@ export default function ClassesPage() {
                         {classItem.title}
                       </td>
                       <td className="py-3 px-4">
-                        <div>
-                          <div className="font-medium">{classItem.clientName}</div>
-                          <div className="text-sm text-gray-500">
-                            {classItem.clientType}
+                        <div className="flex items-center gap-3">
+                          {/* Client Logo/Avatar */}
+                          {classItem.clientLogoUrl ? (
+                            <img
+                              src={classItem.clientLogoUrl}
+                              alt={classItem.clientName}
+                              className="w-10 h-10 rounded-lg object-cover border border-gray-200"
+                            />
+                          ) : (
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold ${getClientColor(classItem.clientType)}`}>
+                              {getClientInitials(classItem.clientName)}
+                            </div>
+                          )}
+                          <div>
+                            <div className="font-medium">{classItem.clientName}</div>
+                            <div className="text-sm text-gray-500">
+                              {classItem.clientType}
+                            </div>
                           </div>
                         </div>
                       </td>

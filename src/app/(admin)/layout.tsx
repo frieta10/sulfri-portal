@@ -50,6 +50,18 @@ export default async function AdminLayout({
                 >
                   Downloads
                 </Link>
+                <Link
+                  href="/admin/badges"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Badges
+                </Link>
+                <Link
+                  href="/admin/skills"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Skills
+                </Link>
               </nav>
             </div>
             <div className="flex items-center space-x-4">

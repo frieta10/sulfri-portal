@@ -2,9 +2,15 @@ import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default async function DashboardPage() {
-  // Fetch dashboard statistics
-  const [totalClasses, upcomingClasses, totalRegistrations, completedClasses] =
-    await Promise.all([
+  // Fetch dashboard statistics with error handling
+  let totalClasses = 0
+  let upcomingClasses = 0
+  let totalRegistrations = 0
+  let completedClasses = 0
+  let recentClasses: any[] = []
+
+  try {
+    const [total, upcoming, registrations, completed] = await Promise.all([
       prisma.class.count(),
       prisma.class.count({
         where: { status: "UPCOMING" },
@@ -14,17 +20,33 @@ export default async function DashboardPage() {
         where: { status: "COMPLETED" },
       }),
     ])
+    
+    totalClasses = total
+    upcomingClasses = upcoming
+    totalRegistrations = registrations
+    completedClasses = completed
 
-  // Fetch recent classes
-  const recentClasses = await prisma.class.findMany({
-    take: 5,
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: {
-        select: { registrations: true },
+    // Fetch recent classes
+    recentClasses = await prisma.class.findMany({
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: {
+          select: { registrations: true },
+        },
       },
-    },
-  })
+    })
+  } catch (error: any) {
+    console.error("Dashboard data fetch error:", error)
+    // Log specific error details for debugging
+    if (error.message?.includes("DATABASE_URL")) {
+      throw new Error("Database configuration error: DATABASE_URL is not set")
+    }
+    if (error.message?.includes("connect")) {
+      throw new Error(`Database connection failed: ${error.message}`)
+    }
+    throw error
+  }
 
   return (
     <div className="space-y-8">

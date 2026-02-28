@@ -9,6 +9,8 @@ const navLinks = [
   { href: "/classes", label: "Classes" },
   { href: "/profile-settings", label: "Profile Settings" },
   { href: "/downloads", label: "Downloads" },
+  { href: "/admin/badges", label: "Badges" },
+  { href: "/admin/skills", label: "Skills" },
   { href: "/change-password", label: "Change Password" },
 ]
 

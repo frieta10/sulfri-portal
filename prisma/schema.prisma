@@ -24,6 +24,7 @@ model Class {
   title               String
   clientName          String         @map("client_name")
   clientType          ClientType     @map("client_type")
+  clientLogoUrl       String?        @map("client_logo_url")
   topicCategory       String         @map("topic_category")
   mode                ClassMode
   location            String?
@@ -70,6 +71,105 @@ model Download {
   @@map("downloads")
 }
 
+model Badge {
+  id                String    @id @default(cuid())
+  title             String
+  slug              String    @unique
+  description       String?
+  issuer            String
+  issueDate         DateTime? @map("issue_date")
+  expiryDate        DateTime? @map("expiry_date")
+  credlyBadgeId     String    @map("credly_badge_id") // From embed code or auto-sync
+  credlyHost        String    @default("https://www.credly.com") @map("credly_host")
+  iframeWidth       Int       @default(150) @map("iframe_width")
+  iframeHeight      Int       @default(270) @map("iframe_height")
+  verificationUrl   String?   @map("verification_url")
+  featured          Boolean   @default(false)
+  visibility        Visibility @default(PUBLIC)
+  displayOrder      Int       @default(0) @map("display_order")
+  fallbackImageUrl  String?   @map("fallback_image_url")
+  embedCode         String?   @map("embed_code") // Raw embed code for reference
+  autoSyncEnabled   Boolean   @default(false) @map("auto_sync_enabled")
+  lastSyncedAt      DateTime? @map("last_synced_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  
+  // Relationships - only use explicit junction table
+  badgeSkills       BadgeSkill[]
+
+  @@index([slug])
+  @@index([visibility])
+  @@index([displayOrder])
+  @@index([featured])
+  @@map("badges")
+}
+
+model Skill {
+  id            String    @id @default(cuid())
+  name          String    @unique
+  slug          String    @unique
+  description   String?
+  visibility    Visibility @default(PUBLIC)
+  displayOrder  Int       @default(0) @map("display_order")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  
+  // Relationships - only use explicit junction table
+  badgeSkills   BadgeSkill[]
+
+  @@index([visibility])
+  @@index([displayOrder])
+  @@map("skills")
+}
+
+model BadgeSkill {
+  badgeId   String   @map("badge_id")
+  skillId   String   @map("skill_id")
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  skill     Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  
+  @@id([badgeId, skillId])
+  @@unique([badgeId, skillId])
+  @@index([badgeId])
+  @@index([skillId])
+  @@map("badge_skills")
+}
+
+enum Visibility {
+  PUBLIC
+  HIDDEN
+}
+
+// Credly OAuth Integration
+model OauthState {
+  id        String   @id @default(cuid())
+  state     String   @unique
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
+
+  @@index([state])
+  @@index([expiresAt])
+  @@map("oauth_states")
+}
+
+model CredlyOAuthToken {
+  id                String    @id @default(cuid())
+  userId            String    @unique @map("user_id")
+  credlyUserId      String    @map("credly_user_id")
+  accessToken       String    @map("access_token")
+  refreshToken      String    @map("refresh_token")
+  expiresAt         DateTime  @map("expires_at")
+  credlyUsername    String?   @map("credly_username")
+  credlyProfileUrl  String?   @map("credly_profile_url")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([credlyUserId])
+  @@map("credly_oauth_tokens")
+}
+
 model ProfileSettings {
   id              String   @id @default("singleton")
   displayName     String   @map("display_name")
@@ -81,7 +181,6 @@ model ProfileSettings {
   locationBase    String?  @map("location_base")
   profilePhotoUrl String?  @map("profile_photo_url")
   lastUpdatedAt   DateTime @updatedAt @map("last_updated_at")
-  credlyUsername  String?  @map("credly_username")
 
   @@map("profile_settings")
 }

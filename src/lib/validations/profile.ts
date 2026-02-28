@@ -9,7 +9,6 @@ export const profileSchema = z.object({
   linkedinUrl: z.string().optional().nullable().or(z.literal("")),
   locationBase: z.string().optional().nullable(),
   profilePhotoUrl: z.string().optional().nullable().or(z.literal("")),
-  credlyUsername: z.string().optional().nullable(),
 })
 
 export type ProfileFormData = z.infer<typeof profileSchema>

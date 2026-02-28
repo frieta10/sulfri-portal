@@ -1,44 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
   Briefcase,
   Code,
   Cpu,
-  Shield,
-  Cloud,
-  BarChart3,
-  Zap,
-  Users,
   Target,
-  Lightbulb,
-  GraduationCap,
-  Wrench,
-  Building2,
-  HardHat,
-  Construction,
-  HeartHandshake,
-  MessageSquareHeart,
-  Scale,
-  Megaphone,
-  AlertCircle,
-  CheckCircle2,
-  Globe,
-  Palette,
-  Database,
-  LineChart,
-  Lock,
-  Mail,
-  Share2,
-  FileSpreadsheet,
-  Brain,
-  Bot,
+  BookOpen,
   ChevronRight,
+  Loader2,
 } from "lucide-react"
 
-// Training expertise categories with icons
 interface TrainingCategory {
   id: string
   title: string
@@ -47,97 +21,106 @@ interface TrainingCategory {
   bgColor: string
   courses: {
     name: string
-    icon: React.ReactNode
-    level?: "Basic" | "Intermediate" | "Advanced"
+    completedCount: number
   }[]
 }
 
-const trainingCategories: TrainingCategory[] = [
-  {
-    id: "project-management",
-    title: "Project Management & Productivity",
-    icon: <Briefcase className="w-6 h-6" />,
-    color: "text-blue-700",
-    bgColor: "bg-blue-50",
-    courses: [
-      { name: "Project Management Fundamentals", icon: <Target className="w-4 h-4" />, level: "Basic" },
-      { name: "Project Management Intermediate", icon: <Target className="w-4 h-4" />, level: "Intermediate" },
-      { name: "Project Management Advanced", icon: <Target className="w-4 h-4" />, level: "Advanced" },
-      { name: "Agile & Scrum Methodologies", icon: <Zap className="w-4 h-4" /> },
-      { name: "Project Governance & PMO Awareness", icon: <Building2 className="w-4 h-4" /> },
-      { name: "AI in Project Management", icon: <Bot className="w-4 h-4" /> },
-    ],
-  },
-  {
-    id: "digital-technology",
-    title: "Digital & Technology",
-    icon: <Code className="w-6 h-6" />,
-    color: "text-purple-700",
-    bgColor: "bg-purple-50",
-    courses: [
-      { name: "Microsoft 365 Awareness", icon: <Mail className="w-4 h-4" /> },
-      { name: "SharePoint Productivity", icon: <Share2 className="w-4 h-4" /> },
-      { name: "Outlook & Teams Mastery", icon: <Mail className="w-4 h-4" /> },
-      { name: "Cyber Security Awareness", icon: <Shield className="w-4 h-4" /> },
-      { name: "Cloud Fundamentals (Azure)", icon: <Cloud className="w-4 h-4" /> },
-      { name: "Cloud Fundamentals (Google Cloud)", icon: <Cloud className="w-4 h-4" /> },
-      { name: "Data Visualization & Storytelling", icon: <BarChart3 className="w-4 h-4" /> },
-      { name: "Prompt Engineering & AI Fundamentals", icon: <Brain className="w-4 h-4" /> },
-    ],
-  },
-  {
-    id: "data-analytics",
-    title: "Data, Analytics & Design",
-    icon: <Database className="w-6 h-6" />,
-    color: "text-emerald-700",
-    bgColor: "bg-emerald-50",
-    courses: [
-      { name: "Power BI Data Analyst", icon: <LineChart className="w-4 h-4" /> },
-      { name: "Data Science Specialist", icon: <Database className="w-4 h-4" /> },
-      { name: "Digital Marketing Specialist", icon: <Globe className="w-4 h-4" /> },
-      { name: "Visual Design Professional", icon: <Palette className="w-4 h-4" /> },
-    ],
-  },
-  {
-    id: "engineering",
-    title: "Engineering Literacy & Applied Engineering",
-    icon: <Cpu className="w-6 h-6" />,
-    color: "text-orange-700",
-    bgColor: "bg-orange-50",
-    courses: [
-      { name: "Engineering Literacy - Electrical Systems", icon: <Zap className="w-4 h-4" /> },
-      { name: "Engineering Literacy - Civil & Construction", icon: <Construction className="w-4 h-4" /> },
-      { name: "Applied Engineering - Electrical Systems", icon: <HardHat className="w-4 h-4" /> },
-      { name: "Applied Engineering - Civil & Construction", icon: <HardHat className="w-4 h-4" /> },
-    ],
-  },
-  {
-    id: "workplace-culture",
-    title: "Workplace Conduct & Culture",
-    icon: <HeartHandshake className="w-6 h-6" />,
-    color: "text-rose-700",
-    bgColor: "bg-rose-50",
-    courses: [
-      { name: "Workplace Anti-Bullying", icon: <Shield className="w-4 h-4" /> },
-      { name: "Respectful & Ethical Workplace", icon: <HeartHandshake className="w-4 h-4" /> },
-      { name: "Managing Workplace Conflict", icon: <MessageSquareHeart className="w-4 h-4" /> },
-      { name: "Leadership Accountability", icon: <Scale className="w-4 h-4" /> },
-      { name: "Building Speak-Up Culture", icon: <Megaphone className="w-4 h-4" /> },
-      { name: "Workplace Boundaries & Digital Conduct", icon: <Lock className="w-4 h-4" /> },
-      { name: "Preventing Toxic Work Environments", icon: <AlertCircle className="w-4 h-4" /> },
-      { name: "One Million Dollar Employee Mindset", icon: <CheckCircle2 className="w-4 h-4" /> },
-    ],
-  },
-]
-
-interface TrainingExpertiseProps {
-  defaultExpanded?: boolean
+interface ClassData {
+  id: string
+  title: string
+  clientName: string
+  topicCategory: string
 }
 
-export function TrainingExpertise({ defaultExpanded = false }: TrainingExpertiseProps) {
+export function TrainingExpertise({ defaultExpanded = false }: { defaultExpanded?: boolean }) {
   const [expandedCategories, setExpandedCategories] = useState<string[]>(
-    defaultExpanded ? trainingCategories.map((c) => c.id) : []
+    defaultExpanded ? ["all"] : []
   )
+  const [classes, setClasses] = useState<ClassData[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchClasses()
+  }, [])
+
+  const fetchClasses = async () => {
+    try {
+      const response = await fetch("/api/experience")
+      if (response.ok) {
+        const data = await response.json()
+        setClasses(data.classes || [])
+      }
+    } catch (error) {
+      console.error("Error fetching classes:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Build training categories from actual classes data
+  const getCategoriesFromClasses = (): TrainingCategory[] => {
+    // Get unique topic categories from classes
+    const topicCategories = Array.from(new Set(classes.map((c) => c.topicCategory)))
+    
+    // Map topics to categories
+    const categoryMap: Record<string, { title: string; icon: React.ReactNode; color: string; bgColor: string }> = {
+      "Project Management": {
+        title: "Project Management & Productivity",
+        icon: <Briefcase className="w-6 h-6" />,
+        color: "text-blue-400",
+        bgColor: "bg-blue-500/10",
+      },
+      "Digital & Technology": {
+        title: "Digital & Technology",
+        icon: <Code className="w-6 h-6" />,
+        color: "text-purple-400",
+        bgColor: "bg-purple-500/10",
+      },
+      "Data & Analytics": {
+        title: "Data, Analytics & Design",
+        icon: <Cpu className="w-6 h-6" />,
+        color: "text-emerald-400",
+        bgColor: "bg-emerald-500/10",
+      },
+      "Engineering": {
+        title: "Engineering Literacy",
+        icon: <Cpu className="w-6 h-6" />,
+        color: "text-orange-400",
+        bgColor: "bg-orange-500/10",
+      },
+      "Workplace Culture": {
+        title: "Workplace Conduct & Culture",
+        icon: <Target className="w-6 h-6" />,
+        color: "text-rose-400",
+        bgColor: "bg-rose-500/10",
+      },
+    }
+
+    // Build categories from actual class data
+    return topicCategories.map((topic) => {
+      const categoryClasses = classes.filter((c) => c.topicCategory === topic)
+      const categoryInfo = categoryMap[topic] || {
+        title: topic,
+        icon: <BookOpen className="w-6 h-6" />,
+        color: "text-slate-400",
+        bgColor: "bg-slate-500/10",
+      }
+
+      return {
+        id: topic.toLowerCase().replace(/\s+/g, "-"),
+        title: categoryInfo.title,
+        icon: categoryInfo.icon,
+        color: categoryInfo.color,
+        bgColor: categoryInfo.bgColor,
+        courses: categoryClasses.map((c) => ({
+          name: c.title,
+          completedCount: 1,
+        })),
+      }
+    })
+  }
+
+  const trainingCategories = getCategoriesFromClasses()
 
   const toggleCategory = (id: string) => {
     setExpandedCategories((prev) =>
@@ -145,21 +128,37 @@ export function TrainingExpertise({ defaultExpanded = false }: TrainingExpertise
     )
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+      </div>
+    )
+  }
+
+  if (trainingCategories.length === 0) {
+    return (
+      <Card className="bg-slate-900/50 border-slate-800">
+        <CardContent className="py-12 text-center">
+          <BookOpen className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+          <p className="text-slate-400">No training data available yet.</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <div className="space-y-4">
       {trainingCategories.map((category) => {
         const isExpanded = expandedCategories.includes(category.id)
-        
+
         return (
           <Card
             key={category.id}
-            className={`overflow-hidden transition-all duration-300 border border-slate-800 bg-slate-900/50 hover:border-slate-700 hover:bg-slate-800/50`}
+            className="overflow-hidden transition-all duration-300 border border-slate-800 bg-slate-900/50 hover:border-slate-700 hover:bg-slate-800/50"
           >
             {/* Category Header */}
-            <button
-              onClick={() => toggleCategory(category.id)}
-              className="w-full"
-            >
+            <button onClick={() => toggleCategory(category.id)} className="w-full">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -167,11 +166,11 @@ export function TrainingExpertise({ defaultExpanded = false }: TrainingExpertise
                       {category.icon}
                     </div>
                     <div className="text-left">
-                      <h3 className={`font-bold text-lg ${category.color.replace('text-', 'text-').replace('700', '400').replace('600', '400')}`}>
+                      <h3 className={`font-bold text-lg ${category.color}`}>
                         {category.title}
                       </h3>
                       <p className="text-sm text-slate-500">
-                        {category.courses.length} courses available
+                        {category.courses.length} classes completed
                       </p>
                     </div>
                   </div>
@@ -196,26 +195,20 @@ export function TrainingExpertise({ defaultExpanded = false }: TrainingExpertise
                     {category.courses.map((course, idx) => (
                       <div
                         key={idx}
-                        className="group inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all cursor-default"
+                        className="group/course inline-flex items-center gap-2 px-3 py-2 bg-slate-950 rounded-lg border border-slate-800 hover:border-slate-600 transition-all cursor-default"
                       >
-                        <span className={`${category.color}`}>{course.icon}</span>
-                        <span className="text-sm font-medium text-slate-700">
+                        <span className={category.color}>
+                          <BookOpen className="w-4 h-4" />
+                        </span>
+                        <span className="text-sm font-medium text-slate-300">
                           {course.name}
                         </span>
-                        {course.level && (
-                          <Badge
-                            variant="secondary"
-                            className={`text-[10px] ${
-                              course.level === "Basic"
-                                ? "bg-green-100 text-green-700"
-                                : course.level === "Intermediate"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-red-100 text-red-700"
-                            }`}
-                          >
-                            {course.level}
-                          </Badge>
-                        )}
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] bg-green-500/20 text-green-400 border-green-500/30"
+                        >
+                          Completed
+                        </Badge>
                       </div>
                     ))}
                   </div>
@@ -243,24 +236,6 @@ export function TrainingExpertise({ defaultExpanded = false }: TrainingExpertise
             : "Expand all categories"}
         </button>
       </div>
-    </div>
-  )
-}
-
-// Compact version for sidebars or smaller spaces
-export function TrainingExpertiseCompact() {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {trainingCategories.map((category) => (
-        <Badge
-          key={category.id}
-          variant="secondary"
-          className={`px-3 py-1.5 text-sm cursor-default hover:shadow-sm transition-shadow ${category.bgColor} ${category.color} border-0`}
-        >
-          <span className="mr-1.5">{category.icon}</span>
-          {category.title}
-        </Badge>
-      ))}
     </div>
   )
 }

@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { CredlyBadges } from "@/components/credly-badges"
+
 import { TrainingExpertise } from "@/components/training-expertise"
 import { ClientCarousel, ClientGrid, ClientCategoryFilter } from "@/components/client-carousel"
 import {
@@ -41,6 +41,7 @@ import {
   ChevronRight,
   Play,
   Quote,
+  ExternalLink,
 } from "lucide-react"
 
 // Animation hook
@@ -146,7 +147,6 @@ type Profile = {
   linkedinUrl: string | null
   locationBase: string | null
   profilePhotoUrl: string | null
-  credlyUsername: string | null
   lastUpdatedAt: string
 }
 
@@ -161,9 +161,22 @@ type ExperienceClass = {
   startDatetime: string
 }
 
+type Badge = {
+  id: string
+  name: string
+  description: string | null
+  imageUrl: string
+  issuer: string
+  issueDate: string
+  skills: string[]
+  category: string
+  credentialUrl: string | null
+}
+
 export default function PublicProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [classes, setClasses] = useState<ExperienceClass[]>([])
+  const [badges, setBadges] = useState<Badge[]>([])
   const [yearFilter, setYearFilter] = useState("all")
   const [topicFilter, setTopicFilter] = useState("all")
   const [years, setYears] = useState<string[]>([])
@@ -182,6 +195,7 @@ export default function PublicProfilePage() {
   useEffect(() => {
     fetchProfile()
     fetchExperience()
+    fetchBadges()
   }, [])
 
   useEffect(() => {
@@ -209,6 +223,15 @@ export default function PublicProfilePage() {
       if (response.ok) setProfile(await response.json())
     } catch (error) {
       console.error("Error fetching profile:", error)
+    }
+  }
+
+  const fetchBadges = async () => {
+    try {
+      const response = await fetch("/api/badges")
+      if (response.ok) setBadges(await response.json())
+    } catch (error) {
+      console.error("Error fetching badges:", error)
     }
   }
 
@@ -254,7 +277,7 @@ export default function PublicProfilePage() {
             </Link>
             
             <nav className="hidden md:flex items-center gap-1">
-              {['Credentials', 'Expertise', 'Experience', 'Clients'].map((item) => (
+              {['Expertise', 'Experience', 'Clients'].map((item) => (
                 <button 
                   key={item}
                   onClick={() => scrollToSection(item.toLowerCase())}
@@ -263,6 +286,18 @@ export default function PublicProfilePage() {
                   {item}
                 </button>
               ))}
+              <Link 
+                href="/badges" 
+                className="px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-full transition-all"
+              >
+                Credentials
+              </Link>
+              <Link 
+                href="/skills" 
+                className="px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-full transition-all"
+              >
+                Skills
+              </Link>
               <Link 
                 href="/downloads-public" 
                 className="px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-full transition-all"
@@ -429,36 +464,27 @@ export default function PublicProfilePage() {
         </div>
       </section>
 
-      {/* Credly Badges Section */}
-      {profile?.credlyUsername && (
-        <section id="credentials" className="py-20 lg:py-28">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <FadeIn>
-              <div className="text-center mb-12">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 border border-orange-500/20 rounded-full text-orange-400 text-sm font-medium mb-4">
-                  <Award className="w-4 h-4" />
-                  Verified Credentials
-                </div>
-                <h2 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-                  Professional Certifications
-                </h2>
-                <p className="text-slate-400 mt-3 max-w-2xl mx-auto">
-                  Industry-recognized certifications from Microsoft, Google, CompTIA, Cisco, and more
-                </p>
+      {/* Certifications & Badges Section */}
+      <section id="credentials" className="py-20 lg:py-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <FadeIn>
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 border border-orange-500/20 rounded-full text-orange-400 text-sm font-medium mb-4">
+                <Award className="w-4 h-4" />
+                Professional Certifications
               </div>
-            </FadeIn>
+              <h2 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+                Certifications & Badges
+              </h2>
+              <p className="text-slate-400 mt-3 max-w-2xl mx-auto">
+                Industry-recognized certifications and credentials from leading technology providers
+              </p>
+            </div>
+          </FadeIn>
 
-            <FadeIn delay={100}>
-              <CredlyBadges 
-                username={profile.credlyUsername} 
-                displayStyle="grid"
-                maxBadges={8}
-                showSkills={true}
-              />
-            </FadeIn>
-          </div>
-        </section>
-      )}
+          <BadgeDisplay />
+        </div>
+      </section>
 
       {/* Training Expertise Section */}
       <section id="expertise" className="py-20 lg:py-28 bg-slate-900/30 border-y border-slate-800/50">
@@ -495,17 +521,21 @@ export default function PublicProfilePage() {
                 Trusted Organizations
               </div>
               <h2 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-                Our Clients
+                List of Agencies
               </h2>
               <p className="text-slate-400 mt-3 max-w-2xl mx-auto">
-                Delivered training for government agencies, GLCs, multinational corporations, 
-                and higher education institutions
+                Delivered training for government agencies, GLCs, multinational corporations,
+                and higher education institutions across Malaysia
               </p>
             </div>
           </FadeIn>
 
           <FadeIn delay={100}>
-            <ClientCarousel speed={50} pauseOnHover={true} />
+            <ClientCarousel 
+              speed={50} 
+              pauseOnHover={true} 
+              actualClients={[...new Set(classes.map((c) => c.clientName))]}
+            />
           </FadeIn>
 
           <FadeIn delay={200}>
@@ -513,7 +543,9 @@ export default function PublicProfilePage() {
               <div className="flex justify-center mb-8">
                 <ClientCategoryFilter selected={clientFilter} onSelect={setClientFilter} />
               </div>
-              <ClientGrid />
+              <ClientGrid 
+                actualClients={[...new Set(classes.map((c) => c.clientName))]}
+              />
             </div>
           </FadeIn>
         </div>
@@ -726,6 +758,126 @@ export default function PublicProfilePage() {
           </div>
         </div>
       </footer>
+    </div>
+  )
+}
+
+// Badge Display Component
+function BadgeDisplay() {
+  const [badges, setBadges] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchBadges()
+  }, [])
+
+  const fetchBadges = async () => {
+    try {
+      const response = await fetch("/api/badges?limit=8")
+      const data = await response.json()
+      if (response.ok && data.badges) {
+        setBadges(data.badges)
+      }
+    } catch (error) {
+      console.error("Error fetching badges:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="w-10 h-10 border-4 border-slate-800 border-t-orange-500 rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (badges.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Award className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+        <p className="text-slate-400">No certifications to display yet.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      {/* Badges Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {badges.map((badge, index) => (
+          <FadeIn key={badge.id} delay={index * 50}>
+            <Link href={`/badges/${badge.slug}`}>
+              <div className="group bg-slate-900/50 rounded-2xl border border-slate-800 p-4 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-300">
+                {/* Badge Image */}
+                <div className="relative aspect-square mb-4 overflow-hidden rounded-xl bg-slate-800">
+                  {badge.fallbackImageUrl ? (
+                    <img
+                      src={badge.fallbackImageUrl}
+                      alt={badge.title}
+                      className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Award className="w-12 h-12 text-slate-600" />
+                    </div>
+                  )}
+                  {/* Verified Badge */}
+                  <div className="absolute top-2 right-2 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                    <Shield className="w-3 h-3 text-slate-900" />
+                  </div>
+                </div>
+
+                {/* Badge Info */}
+                <h3 className="font-semibold text-sm text-slate-100 line-clamp-2 group-hover:text-orange-400 transition-colors">
+                  {badge.title}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">{badge.issuer}</p>
+
+                {/* Issue Date */}
+                {badge.issueDate && (
+                  <p className="text-xs text-slate-600 mt-1">
+                    {new Date(badge.issueDate).toLocaleDateString("en-US", {
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </p>
+                )}
+
+                {/* Skills */}
+                {badge.skills && badge.skills.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-3">
+                    {badge.skills.slice(0, 3).map((skill: any) => (
+                      <span
+                        key={skill.id}
+                        className="text-[10px] px-2 py-0.5 bg-slate-800 text-slate-400 rounded-full"
+                      >
+                        {skill.name}
+                      </span>
+                    ))}
+                    {badge.skills.length > 3 && (
+                      <span className="text-[10px] text-slate-500">
+                        +{badge.skills.length - 3}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </Link>
+          </FadeIn>
+        ))}
+      </div>
+
+      {/* View All Link */}
+      <div className="text-center mt-8">
+        <Link href="/badges">
+          <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800">
+            View All Credentials
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </Link>
+      </div>
     </div>
   )
 }

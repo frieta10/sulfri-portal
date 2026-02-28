@@ -21,10 +21,9 @@ import {
   Award,
   Briefcase,
   CheckCircle2,
-  Sparkles,
 } from "lucide-react"
 import Link from "next/link"
-import { CredlySetupGuide } from "@/components/credly-badges"
+import { ImageCropper } from "@/components/image-cropper"
 
 type Profile = {
   displayName: string
@@ -35,7 +34,6 @@ type Profile = {
   linkedinUrl: string | null
   locationBase: string | null
   profilePhotoUrl: string | null
-  credlyUsername: string | null
   lastUpdatedAt: string
 }
 
@@ -46,6 +44,10 @@ export default function ProfileSettingsPage() {
   const [uploading, setUploading] = useState(false)
   const [editingField, setEditingField] = useState<string | null>(null)
   const [editValues, setEditValues] = useState<Partial<Profile>>({})
+  
+  // Cropper state
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
+  const [tempFile, setTempFile] = useState<File | null>(null)
 
   useEffect(() => {
     fetchProfile()
@@ -59,7 +61,8 @@ export default function ProfileSettingsPage() {
         setProfile(data)
         setEditValues(data)
       } else {
-        toast.error("Failed to load profile")
+        const error = await response.json().catch(() => ({ error: "Unknown error" }))
+        toast.error(error.error || "Failed to load profile")
       }
     } catch (error) {
       console.error("Error fetching profile:", error)
@@ -75,18 +78,19 @@ export default function ProfileSettingsPage() {
     try {
       setSaving(true)
 
-      const dataToSave: Partial<Profile> = {
-        displayName: profile.displayName,
-        headline: profile.headline,
-        bio: profile.bio,
-        email: profile.email,
-        phone: profile.phone,
-        linkedinUrl: profile.linkedinUrl,
-        locationBase: profile.locationBase,
-        profilePhotoUrl: profile.profilePhotoUrl,
-        credlyUsername: profile.credlyUsername,
-        ...(field && { [field]: editValues[field] }),
+      // Build data to save
+      const dataToSave: any = {
+        displayName: field === "displayName" ? editValues.displayName : profile.displayName,
+        headline: field === "headline" ? editValues.headline : profile.headline,
+        bio: field === "bio" ? editValues.bio : profile.bio,
+        email: field === "email" ? editValues.email : profile.email,
+        phone: field === "phone" ? editValues.phone : profile.phone,
+        linkedinUrl: field === "linkedinUrl" ? editValues.linkedinUrl : profile.linkedinUrl,
+        locationBase: field === "locationBase" ? editValues.locationBase : profile.locationBase,
+        profilePhotoUrl: field === "profilePhotoUrl" ? editValues.profilePhotoUrl : profile.profilePhotoUrl,
       }
+
+      console.log("Saving profile:", dataToSave)
 
       const response = await fetch("/api/profile", {
         method: "PUT",
@@ -94,13 +98,14 @@ export default function ProfileSettingsPage() {
         body: JSON.stringify(dataToSave),
       })
 
+      const responseData = await response.json().catch(() => ({ error: "Invalid response" }))
+      console.log("Save response:", response.status, responseData)
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to update profile")
+        throw new Error(responseData.error || `Failed to update profile: ${response.status}`)
       }
 
-      const updated = await response.json()
-      setProfile(updated)
+      setProfile(responseData)
       setEditingField(null)
       toast.success(`${field || 'Profile'} updated successfully!`)
     } catch (error: any) {
@@ -120,30 +125,40 @@ export default function ProfileSettingsPage() {
     setEditValues(prev => ({ ...prev, [field]: value }))
   }, [])
 
-  // File upload handler with ID-based input
+  // File select handler - shows cropper
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !profile) {
-      console.log("No file selected or no profile")
-      return
-    }
+    if (!file) return
 
-    console.log("File selected:", file.name, file.type, file.size)
+    // Create object URL for the cropper
+    const objectUrl = URL.createObjectURL(file)
+    setCropImageSrc(objectUrl)
+    setTempFile(file)
+    
+    // Reset input
+    e.target.value = ""
+  }, [])
+
+  // Handle crop complete
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    if (!profile) return
 
     try {
       setUploading(true)
       toast.loading("Uploading photo...", { id: "upload" })
-      
-      const formData = new FormData()
-      formData.append("file", file)
 
-      console.log("Uploading to /api/upload...")
+      // Create file from blob
+      const croppedFile = new File([croppedBlob], tempFile?.name || "profile.jpg", {
+        type: "image/jpeg",
+      })
+
+      const formData = new FormData()
+      formData.append("file", croppedFile)
+
       const uploadResponse = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       })
-
-      console.log("Upload response status:", uploadResponse.status)
 
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.json().catch(() => ({ error: "Upload failed" }))
@@ -151,54 +166,59 @@ export default function ProfileSettingsPage() {
       }
 
       const { url } = await uploadResponse.json()
-      console.log("Upload successful, URL:", url)
 
-      toast.loading("Updating profile...", { id: "upload" })
-      
-      // Update profile with new photo URL
+      // Update profile
+      const updateData = {
+        displayName: profile.displayName,
+        headline: profile.headline,
+        bio: profile.bio,
+        email: profile.email,
+        phone: profile.phone,
+        linkedinUrl: profile.linkedinUrl,
+        locationBase: profile.locationBase,
+        profilePhotoUrl: url,
+      }
+
       const updateResponse = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          displayName: profile.displayName,
-          headline: profile.headline,
-          bio: profile.bio,
-          email: profile.email,
-          phone: profile.phone,
-          linkedinUrl: profile.linkedinUrl,
-          locationBase: profile.locationBase,
-          profilePhotoUrl: url,
-          credlyUsername: profile.credlyUsername,
-        }),
+        body: JSON.stringify(updateData),
       })
 
+      const updateResult = await updateResponse.json()
+
       if (!updateResponse.ok) {
-        const errorData = await updateResponse.json().catch(() => ({ error: "Update failed" }))
-        throw new Error(errorData.error || "Failed to update profile photo")
+        throw new Error(updateResult.error || "Failed to update profile photo")
       }
 
-      const updated = await updateResponse.json()
-      setProfile(updated)
-      setEditValues(updated)
+      setProfile(updateResult)
+      setEditValues(updateResult)
       toast.success("Profile photo updated!", { id: "upload" })
+      
+      // Close cropper
+      handleCropCancel()
     } catch (error: any) {
-      console.error("Upload error:", error)
+      console.error("Upload/Update error:", error)
       toast.error(error.message || "Failed to upload photo", { id: "upload" })
     } finally {
       setUploading(false)
-      // Reset the input
-      e.target.value = ""
     }
-  }, [profile])
+  }
+
+  // Handle crop cancel
+  const handleCropCancel = () => {
+    if (cropImageSrc) {
+      URL.revokeObjectURL(cropImageSrc)
+    }
+    setCropImageSrc(null)
+    setTempFile(null)
+  }
 
   // Trigger file input click
   const triggerFileInput = useCallback(() => {
-    console.log("Triggering file input...")
     const input = document.getElementById("profile-photo-input") as HTMLInputElement
     if (input) {
       input.click()
-    } else {
-      console.error("File input not found")
     }
   }, [])
 
@@ -212,6 +232,15 @@ export default function ProfileSettingsPage() {
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
+      {/* Cropper Modal */}
+      {cropImageSrc && (
+        <ImageCropper
+          imageSrc={cropImageSrc}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -434,7 +463,7 @@ export default function ProfileSettingsPage() {
       <Card>
         <CardContent className="p-6">
           <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-amber-500" />
+            <Award className="w-5 h-5 text-amber-500" />
             Contact Information
           </h3>
 
@@ -504,39 +533,6 @@ export default function ProfileSettingsPage() {
               onCancel={handleCancel}
               onChangeValue={handleValueChange}
             />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Credly Integration */}
-      <Card>
-        <CardContent className="p-6">
-          <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-            <Award className="w-5 h-5 text-orange-500" />
-            Credly Integration
-          </h3>
-
-          <div className="grid lg:grid-cols-2 gap-6">
-            <div>
-              <EditableField
-                field="credlyUsername"
-                label="Credly Username"
-                value={profile?.credlyUsername || null}
-                placeholder="your-credly-username"
-                editingField={editingField}
-                editValues={editValues}
-                saving={saving}
-                onStartEdit={setEditingField}
-                onSave={handleSave}
-                onCancel={handleCancel}
-                onChangeValue={handleValueChange}
-              />
-              <p className="text-xs text-slate-500 mt-2">
-                Your username from credly.com/users/<strong>username</strong>/badges
-              </p>
-            </div>
-
-            <CredlySetupGuide />
           </div>
         </CardContent>
       </Card>

@@ -88,6 +88,66 @@ npm run admin:list      # List all admin users
 - [ ] Test public registration via join link
 - [ ] Change the default admin password via `/change-password`
 
+---
+
+# CR-01 Migration: Badge Wallet & Skills Wallet
+
+If you're upgrading from a version before CR-01, follow these additional steps:
+
+## 1. Backup Database
+
+```bash
+# Create backup before migration
+pg_dump $DATABASE_URL > backup-pre-cr01.sql
+```
+
+## 2. Apply CR-01 Migration
+
+```bash
+# Pull production env vars
+npx vercel env pull .env.local
+
+# Apply migration
+npx prisma migrate deploy
+
+# Generate client
+npx prisma generate
+```
+
+## 3. Migrate Existing Badge Data
+
+If you have existing badges in the old format:
+
+```bash
+# Run data migration script
+npx tsx scripts/migrate-badges.ts
+```
+
+See `MIGRATION_CR01.md` for detailed migration documentation.
+
+## 4. Configure Credly (Optional)
+
+1. Navigate to `/admin/badges`
+2. Enter your Credly User ID in the Auto-Sync section
+3. Click "Sync Now" to import badges automatically
+
+## 5. Create Initial Skills
+
+1. Navigate to `/admin/skills`
+2. Add common skills: Cloud Computing, Project Management, Azure, etc.
+3. Assign skills to badges via `/admin/badges`
+
+## 6. Verify Public Pages
+
+- [ ] `/badges` - Badge Wallet displays correctly
+- [ ] `/skills` - Skills Wallet displays correctly
+- [ ] `/badges/[slug]` - Individual badge pages work
+- [ ] `/skills/[slug]` - Individual skill pages work
+
+---
+
+## Troubleshooting
+
 ## Troubleshooting
 
 **500 error on login**: Ensure `NEXTAUTH_SECRET` and `NEXTAUTH_URL` are set correctly.

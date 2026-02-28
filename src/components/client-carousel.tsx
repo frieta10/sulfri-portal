@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useCallback } from "react"
+import { useEffect, useState } from "react"
 import useEmblaCarousel from "embla-carousel-react"
 import Autoplay from "embla-carousel-autoplay"
-import { Building2, Landmark, GraduationCap, Building, Factory, Briefcase } from "lucide-react"
+import { Building2, Landmark, GraduationCap, Building, Briefcase } from "lucide-react"
 
 interface Client {
   name: string
@@ -13,8 +13,8 @@ interface Client {
   color: string
 }
 
-// Client data based on the trainer profile
-const clients: Client[] = [
+// Default clients list (will be overridden by actual data)
+const defaultClients: Client[] = [
   // Government
   { name: "Ministry of Education Malaysia", type: "government", initials: "MOE", color: "bg-blue-600" },
   { name: "Civil Aviation Authority of Malaysia", type: "government", initials: "CAAM", color: "bg-sky-600" },
@@ -76,16 +76,72 @@ const getTypeLabel = (type: Client["type"]) => {
   }
 }
 
+// Infer client type from name
+const inferClientType = (name: string): Client["type"] => {
+  const lowerName = name.toLowerCase()
+  if (lowerName.includes("universiti") || lowerName.includes("politeknik") || lowerName.includes("adtec") || lowerName.includes("college")) {
+    return "education"
+  }
+  if (lowerName.includes("ministry") || lowerName.includes("mampu") || lowerName.includes("jpa") || lowerName.includes("authority")) {
+    return "government"
+  }
+  if (lowerName.includes("berhad") || lowerName.includes("bhd") || lowerName.includes("holdings") || lowerName.includes("tabung")) {
+    return "glc"
+  }
+  return "corporate"
+}
+
+// Get color based on type
+const getClientColor = (type: Client["type"]): string => {
+  switch (type) {
+    case "government":
+      return "bg-blue-600"
+    case "glc":
+      return "bg-emerald-600"
+    case "corporate":
+      return "bg-rose-600"
+    case "education":
+      return "bg-red-600"
+    default:
+      return "bg-slate-600"
+  }
+}
+
+// Get initials from name
+const getInitials = (name: string): string => {
+  const words = name.split(" ")
+  if (words.length === 1) return name.substring(0, 4).toUpperCase()
+  return words
+    .map((w) => w[0])
+    .join("")
+    .substring(0, 4)
+    .toUpperCase()
+}
+
 interface ClientCarouselProps {
   speed?: number
   pauseOnHover?: boolean
+  actualClients?: string[] // Pass actual client names from classes
 }
 
-export function ClientCarousel({ speed = 40, pauseOnHover = true }: ClientCarouselProps) {
-  const [emblaRef, emblaApi] = useEmblaCarousel(
+export function ClientCarousel({ speed = 50, pauseOnHover = true, actualClients }: ClientCarouselProps) {
+  const [emblaRef] = useEmblaCarousel(
     { loop: true, align: "start", skipSnaps: false },
     [Autoplay({ playOnInit: true, delay: 0, stopOnInteraction: false, stopOnMouseEnter: pauseOnHover })]
   )
+
+  // Build clients list from actual data or use defaults
+  const clients: Client[] = actualClients && actualClients.length > 0
+    ? actualClients.map((name) => {
+        const type = inferClientType(name)
+        return {
+          name,
+          type,
+          initials: getInitials(name),
+          color: getClientColor(type),
+        }
+      })
+    : defaultClients
 
   // Duplicate clients for seamless infinite scroll
   const duplicatedClients = [...clients, ...clients, ...clients]
@@ -150,15 +206,26 @@ export function ClientCarousel({ speed = 40, pauseOnHover = true }: ClientCarous
 }
 
 // Static grid version for when carousel isn't needed
-export function ClientGrid({ limit }: { limit?: number }) {
-  const displayClients = limit ? clients.slice(0, limit) : clients
+export function ClientGrid({ actualClients }: { actualClients?: string[] }) {
+  // Build clients list from actual data or use defaults
+  const clients: Client[] = actualClients && actualClients.length > 0
+    ? actualClients.map((name) => {
+        const type = inferClientType(name)
+        return {
+          name,
+          type,
+          initials: getInitials(name),
+          color: getClientColor(type),
+        }
+      })
+    : defaultClients
   
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-      {displayClients.map((client, idx) => (
+      {clients.map((client, idx) => (
         <div
           key={client.name}
-          className="group flex flex-col items-center text-center p-4 bg-white rounded-xl border border-slate-200 hover:border-amber-400 hover:shadow-md transition-all duration-300"
+          className="group flex flex-col items-center text-center p-4 bg-slate-900/50 rounded-xl border border-slate-800 hover:border-blue-500/50 hover:bg-slate-800/50 transition-all duration-300"
         >
           {/* Logo/Initials */}
           <div className={`w-16 h-16 ${client.color} rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-sm mb-3 group-hover:scale-105 transition-transform`}>
@@ -166,13 +233,13 @@ export function ClientGrid({ limit }: { limit?: number }) {
           </div>
           
           {/* Name */}
-          <p className="font-medium text-slate-900 text-sm line-clamp-2">
+          <p className="font-medium text-slate-100 text-sm line-clamp-2">
             {client.name}
           </p>
           
           {/* Type Badge */}
           <div className="flex items-center gap-1 mt-2">
-            <span className="text-slate-400">
+            <span className="text-slate-500">
               {getTypeIcon(client.type)}
             </span>
             <span className="text-xs text-slate-500">
@@ -209,8 +276,8 @@ export function ClientCategoryFilter({
           onClick={() => onSelect(cat.id)}
           className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
             selected === cat.id
-              ? "bg-slate-900 text-white"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              ? "bg-blue-600 text-white"
+              : "bg-slate-900/50 text-slate-400 hover:bg-slate-800 border border-slate-800"
           }`}
         >
           {cat.icon}
