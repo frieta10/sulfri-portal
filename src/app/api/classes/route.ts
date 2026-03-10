@@ -42,6 +42,9 @@ export async function GET(request: NextRequest) {
           _count: {
             select: { registrations: true },
           },
+          sessions: {
+            orderBy: { displayOrder: "asc" },
+          },
         },
         orderBy: { createdAt: "desc" },
         take: limit,
@@ -65,6 +68,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Helper function to convert session date and time to DateTime
+function sessionToDateTime(sessionDate: string, time: string): Date {
+  const date = new Date(sessionDate)
+  const [hours, minutes] = time.split(":").map(Number)
+  date.setHours(hours, minutes, 0, 0)
+  return date
+}
+
 // POST /api/classes - Create a new class
 export async function POST(request: NextRequest) {
   try {
@@ -82,17 +93,60 @@ export async function POST(request: NextRequest) {
     // Generate a unique join code
     const joinCode = await generateUniqueJoinCode(prisma)
 
+    // Prepare base class data
+    const classData: any = {
+      title: validatedData.title,
+      clientName: validatedData.clientName,
+      clientType: validatedData.clientType,
+      topicCategory: validatedData.topicCategory,
+      mode: validatedData.mode,
+      location: validatedData.location,
+      dateType: validatedData.dateType,
+      numberOfDays: validatedData.numberOfDays,
+      notes: validatedData.notes,
+      status: validatedData.status,
+      joinEnabled: validatedData.joinEnabled,
+      showOnPublicProfile: validatedData.showOnPublicProfile,
+      joinCode,
+    }
+
+    // Handle dates based on date type
+    if (validatedData.dateType === "STRAIGHT") {
+      // For straight dates, use provided start and end datetimes
+      classData.startDatetime = new Date(validatedData.startDatetime)
+      classData.endDatetime = new Date(validatedData.endDatetime)
+    } else if (validatedData.dateType === "SEGREGATED" && validatedData.sessions) {
+      // For segregated dates, calculate start and end from sessions
+      const sortedSessions = [...validatedData.sessions].sort((a, b) => 
+        new Date(a.sessionDate).getTime() - new Date(b.sessionDate).getTime()
+      )
+      
+      const firstSession = sortedSessions[0]
+      const lastSession = sortedSessions[sortedSessions.length - 1]
+      
+      classData.startDatetime = sessionToDateTime(firstSession.sessionDate, firstSession.startTime)
+      classData.endDatetime = sessionToDateTime(lastSession.sessionDate, lastSession.endTime)
+      
+      // Prepare sessions for creation
+      classData.sessions = {
+        create: sortedSessions.map((session, index) => ({
+          sessionDate: new Date(session.sessionDate),
+          startTime: session.startTime,
+          endTime: session.endTime,
+          displayOrder: index,
+        })),
+      }
+    }
+
     // Create the class
     const newClass = await prisma.class.create({
-      data: {
-        ...validatedData,
-        startDatetime: new Date(validatedData.startDatetime),
-        endDatetime: new Date(validatedData.endDatetime),
-        joinCode,
-      },
+      data: classData,
       include: {
         _count: {
           select: { registrations: true },
+        },
+        sessions: {
+          orderBy: { displayOrder: "asc" },
         },
       },
     })

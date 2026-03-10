@@ -31,6 +31,8 @@ type Class = {
   clientLogoUrl: string | null
   status: string
   mode: string
+  dateType: "STRAIGHT" | "SEGREGATED"
+  numberOfDays: number
   startDatetime: string
   joinCode: string
   joinEnabled: boolean
@@ -374,7 +376,7 @@ export default function ClassesPage() {
                       Registrations
                     </th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Date
+                      Schedule
                     </th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">
                       Join Code
@@ -433,7 +435,20 @@ export default function ClassesPage() {
                         </Link>
                       </td>
                       <td className="py-3 px-4 text-sm">
-                        {new Date(classItem.startDatetime).toLocaleDateString()}
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-gray-500">
+                            {classItem.dateType === "STRAIGHT" ? "Straight" : "Segregated"} • {classItem.numberOfDays} day{classItem.numberOfDays > 1 ? "s" : ""}
+                          </span>
+                          <span>
+                            {new Date(classItem.startDatetime).toLocaleDateString()}
+                            {classItem.numberOfDays > 1 && (
+                              <>
+                                {" - "}
+                                {new Date(classItem.startDatetime).toLocaleDateString()}
+                              </>
+                            )}
+                          </span>
+                        </div>
                       </td>
                       <td className="py-3 px-4">
                         <code className="bg-gray-100 px-2 py-1 rounded text-sm">

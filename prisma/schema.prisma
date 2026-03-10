@@ -28,8 +28,13 @@ model Class {
   topicCategory       String         @map("topic_category")
   mode                ClassMode
   location            String?
+  
+  // Date scheduling fields
+  dateType            DateType       @default(STRAIGHT) @map("date_type")
+  numberOfDays        Int            @default(1) @map("number_of_days")
   startDatetime       DateTime       @map("start_datetime")
   endDatetime         DateTime       @map("end_datetime")
+  
   notes               String?
   status              ClassStatus    @default(UPCOMING)
   joinCode            String         @unique @map("join_code")
@@ -38,11 +43,35 @@ model Class {
   createdAt           DateTime       @default(now()) @map("created_at")
   updatedAt           DateTime       @updatedAt @map("updated_at")
   registrations       Registration[]
+  sessions            ClassSession[]
 
   @@index([joinCode])
   @@index([status])
   @@index([startDatetime])
   @@map("classes")
+}
+
+// Individual class sessions for segregated dates
+model ClassSession {
+  id          String   @id @default(cuid())
+  classId     String   @map("class_id")
+  sessionDate DateTime @map("session_date") // Date only (time stripped)
+  startTime   String   @map("start_time")   // HH:MM format
+  endTime     String   @map("end_time")     // HH:MM format
+  displayOrder Int     @default(0) @map("display_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  class       Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  
+  @@index([classId])
+  @@index([sessionDate])
+  @@index([displayOrder])
+  @@map("class_sessions")
+}
+
+enum DateType {
+  STRAIGHT
+  SEGREGATED
 }
 
 model Registration {
@@ -69,39 +98,6 @@ model Download {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("downloads")
-}
-
-model Badge {
-  id                String    @id @default(cuid())
-  title             String
-  slug              String    @unique
-  description       String?
-  issuer            String
-  issueDate         DateTime? @map("issue_date")
-  expiryDate        DateTime? @map("expiry_date")
-  credlyBadgeId     String    @map("credly_badge_id") // From embed code or auto-sync
-  credlyHost        String    @default("https://www.credly.com") @map("credly_host")
-  iframeWidth       Int       @default(150) @map("iframe_width")
-  iframeHeight      Int       @default(270) @map("iframe_height")
-  verificationUrl   String?   @map("verification_url")
-  featured          Boolean   @default(false)
-  visibility        Visibility @default(PUBLIC)
-  displayOrder      Int       @default(0) @map("display_order")
-  fallbackImageUrl  String?   @map("fallback_image_url")
-  embedCode         String?   @map("embed_code") // Raw embed code for reference
-  autoSyncEnabled   Boolean   @default(false) @map("auto_sync_enabled")
-  lastSyncedAt      DateTime? @map("last_synced_at")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-  
-  // Relationships - only use explicit junction table
-  badgeSkills       BadgeSkill[]
-
-  @@index([slug])
-  @@index([visibility])
-  @@index([displayOrder])
-  @@index([featured])
-  @@map("badges")
 }
 
 model Skill {
@@ -203,4 +199,520 @@ enum ClassStatus {
   ONGOING
   COMPLETED
   CANCELLED
+}
+
+// ============================================
+// CR-02: Expertise & Skill Tree Models
+// ============================================
+
+model ExpertiseNode {
+  id                String             @id @default(cuid())
+  title             String
+  slug              String             @unique
+  description       String?
+  parentId          String?            @map("parent_id")
+  domain            String?
+  depth             Int                @default(1)
+  proficiencyLevel  ProficiencyLevel   @default(FOUNDATION) @map("proficiency_level")
+  visibility        Visibility         @default(PUBLIC)
+  displayOrder      Int                @default(0) @map("display_order")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  
+  // Self-referential relationship for tree hierarchy
+  parent            ExpertiseNode?     @relation("NodeHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children          ExpertiseNode[]    @relation("NodeHierarchy")
+  
+  // Badge mappings
+  badgeMappings     BadgeExpertiseMap[]
+  
+  // Assets
+  assets            ExpertiseAsset[]
+  
+  @@index([slug])
+  @@index([parentId])
+  @@index([visibility])
+  @@index([domain])
+  @@index([displayOrder])
+  @@map("expertise_nodes")
+}
+
+model BadgeExpertiseMap {
+  badgeId          String         @map("badge_id")
+  expertiseNodeId  String         @map("expertise_node_id")
+  mappingSource    MappingSource  @default(MANUAL) @map("mapping_source")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  
+  badge            Badge          @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  expertiseNode    ExpertiseNode  @relation(fields: [expertiseNodeId], references: [id], onDelete: Cascade)
+  
+  @@id([badgeId, expertiseNodeId])
+  @@index([badgeId])
+  @@index([expertiseNodeId])
+  @@map("badge_expertise_map")
+}
+
+model ExpertiseAsset {
+  id                String         @id @default(cuid())
+  expertiseNodeId   String         @map("expertise_node_id")
+  assetType         AssetType      @map("asset_type")
+  title             String
+  url               String
+  createdAt         DateTime       @default(now()) @map("created_at")
+  
+  expertiseNode     ExpertiseNode  @relation(fields: [expertiseNodeId], references: [id], onDelete: Cascade)
+  
+  @@index([expertiseNodeId])
+  @@map("expertise_assets")
+}
+
+// Update Badge model to include expertise relation
+model Badge {
+  id                String             @id @default(cuid())
+  title             String
+  slug              String             @unique
+  description       String?
+  issuer            String
+  issueDate         DateTime?          @map("issue_date")
+  expiryDate        DateTime?          @map("expiry_date")
+  credlyBadgeId     String             @map("credly_badge_id")
+  credlyHost        String             @default("https://www.credly.com") @map("credly_host")
+  iframeWidth       Int                @default(150) @map("iframe_width")
+  iframeHeight      Int                @default(270) @map("iframe_height")
+  verificationUrl   String?            @map("verification_url")
+  featured          Boolean            @default(false)
+  visibility        Visibility         @default(PUBLIC)
+  displayOrder      Int                @default(0) @map("display_order")
+  fallbackImageUrl  String?            @map("fallback_image_url")
+  embedCode         String?            @map("embed_code")
+  autoSyncEnabled   Boolean            @default(false) @map("auto_sync_enabled")
+  lastSyncedAt      DateTime?          @map("last_synced_at")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  
+  // Relationships
+  badgeSkills       BadgeSkill[]
+  expertiseMappings BadgeExpertiseMap[]
+
+  @@index([slug])
+  @@index([visibility])
+  @@index([displayOrder])
+  @@index([featured])
+  @@map("badges")
+}
+
+// New Enums for CR-02
+enum ProficiencyLevel {
+  FOUNDATION
+  INTERMEDIATE
+  ADVANCED
+  SPECIALIST
+}
+
+enum MappingSource {
+  MANUAL
+  SUGGESTED
+}
+
+enum AssetType {
+  OUTLINE
+  SAMPLE
+  CASE_STUDY
+  LINK
+}
+
+// ============================================
+// CR-03: Event Lead Capture & Course Registration
+// ============================================
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  COMPLETED
+  RETIRED
+}
+
+enum CourseDeliveryMode {
+  ONLINE
+  PHYSICAL
+  HYBRID
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  ARCHIVED
+}
+
+model EventCourse {
+  id               String             @id @default(cuid())
+  title            String
+  shortDescription String?            @map("short_description")
+  fullDescription  String?            @map("full_description")
+  deliveryMode     CourseDeliveryMode @default(ONLINE) @map("delivery_mode")
+  startDate        DateTime?          @map("start_date")
+  endDate          DateTime?          @map("end_date")
+  location         String?
+  status           CourseStatus       @default(DRAFT)
+  visibility       Visibility         @default(PUBLIC)
+  displayOrder     Int                @default(0) @map("display_order")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+  
+  // Relationships
+  selections       LeadCourseSelection[]
+
+  @@index([status])
+  @@index([visibility])
+  @@index([displayOrder])
+  @@map("event_courses")
+}
+
+model EventLead {
+  id            String                @id @default(cuid())
+  fullName      String                @map("full_name")
+  email         String
+  phone         String
+  organisation  String?
+  jobTitle      String?               @map("job_title")
+  consentFlag   Boolean               @map("consent_flag")
+  utmSource     String?               @map("utm_source")
+  status        LeadStatus            @default(NEW)
+  adminNotes    String?               @map("admin_notes")
+  registeredAt  DateTime              @default(now()) @map("registered_at")
+  updatedAt     DateTime              @updatedAt @map("updated_at")
+  
+  // Relationships
+  selections    LeadCourseSelection[]
+
+  @@index([email])
+  @@index([status])
+  @@index([registeredAt])
+  @@index([utmSource])
+  @@map("event_leads")
+}
+
+model LeadCourseSelection {
+  leadId      String      @map("lead_id")
+  courseId    String      @map("course_id")
+  selectedAt  DateTime    @default(now()) @map("selected_at")
+  
+  lead        EventLead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  course      EventCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  @@id([leadId, courseId])
+  @@index([leadId])
+  @@index([courseId])
+  @@map("lead_course_selections")
+}
+
+model EventSettings {
+  id                       String   @id @default("singleton")
+  yayasanNoticeText        String   @default("All courses listed are offered under the YAYASAN PENERAJU programme.") @map("yayasan_notice_text")
+  registrationPageTitle    String   @default("Register Your Interest") @map("registration_page_title")
+  registrationPageTagline  String   @default("Join our upcoming professional development programmes") @map("registration_page_tagline")
+  duplicateCooldownHours   Int      @default(24) @map("duplicate_cooldown_hours")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+
+  @@map("event_settings")
+}
+
+enum QRCodeStatus {
+  ACTIVE
+  EXPIRED
+  CLOSED
+}
+
+model EventQRCode {
+  id            String       @id @default(cuid())
+  name          String
+  utmSource     String?      @map("utm_source")
+  eventStartDate DateTime?   @map("event_start_date")
+  eventEndDate   DateTime?   @map("event_end_date")
+  status        QRCodeStatus @default(ACTIVE)
+  qrUrl         String       @map("qr_url")
+  qrDataUrl     String       @map("qr_data_url")
+  qrSvg         String       @map("qr_svg")
+  scanCount     Int          @default(0) @map("scan_count")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([eventEndDate])
+  @@index([createdAt])
+  @@map("event_qr_codes")
+}
+
+// ============================================
+// CR-04: Client Showcase, Automation & BI Module
+// ============================================
+
+// Module A & B: Testimonials, Case Studies, Press
+model Testimonial {
+  id                  String     @id @default(cuid())
+  quote               String
+  authorName          String     @map("author_name")
+  authorTitle         String?    @map("author_title")
+  authorOrganisation  String?    @map("author_organisation")
+  photoUrl            String?    @map("photo_url")
+  rating              Int?       // 1-5 stars
+  visibility          Visibility @default(PUBLIC)
+  displayOrder        Int        @default(0) @map("display_order")
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+
+  @@index([visibility])
+  @@index([displayOrder])
+  @@map("testimonials")
+}
+
+model CaseStudy {
+  id                String     @id @default(cuid())
+  clientLabel       String     @map("client_label")
+  trainingTopic     String     @map("training_topic")
+  participantCount  Int?       @map("participant_count")
+  durationText      String?    @map("duration_text")
+  outcomeSummary    String?    @map("outcome_summary") @db.VarChar(200)
+  studyDate         DateTime?  @map("study_date")
+  visibility        Visibility @default(PUBLIC)
+  displayOrder      Int        @default(0) @map("display_order")
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+
+  @@index([visibility])
+  @@index([displayOrder])
+  @@map("case_studies")
+}
+
+model PressEntry {
+  id              String     @id @default(cuid())
+  headline        String
+  publication     String
+  url             String?
+  publishedDate   DateTime?  @map("published_date")
+  visibility      Visibility @default(PUBLIC)
+  displayOrder    Int        @default(0) @map("display_order")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  @@index([visibility])
+  @@index([displayOrder])
+  @@map("press_entries")
+}
+
+// Showcase Statistics (admin-editable live counters)
+model ShowcaseStat {
+  id            String   @id @default(cuid())
+  statKey       String   @unique @map("stat_key") // classes_completed, hours_delivered, participants_trained, unique_clients
+  statValue     Int      @map("stat_value")
+  label         String
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("showcase_stats")
+}
+
+// Module C: Proposal Generator
+enum ProposalStatus {
+  NEW
+  SENT
+  FOLLOWED_UP
+  CONVERTED
+  LOST
+}
+
+enum GroupSizeRange {
+  UNDER_20
+  BETWEEN_20_50
+  BETWEEN_50_100
+  OVER_100
+}
+
+model ProposalRequest {
+  id                String          @id @default(cuid())
+  contactName       String          @map("contact_name")
+  organisation      String
+  email             String
+  phone             String
+  industrySector    String?         @map("industry_sector")
+  topicInterest     String          @map("topic_interest")
+  groupSize         GroupSizeRange  @map("group_size")
+  deliveryMode      CourseDeliveryMode @map("delivery_mode")
+  preferredTimeline String?         @map("preferred_timeline")
+  additionalNotes   String?         @map("additional_notes")
+  generatedPdfUrl   String?         @map("generated_pdf_url")
+  status            ProposalStatus  @default(NEW)
+  adminNotes        String?         @map("admin_notes")
+  consentFlag       Boolean         @map("consent_flag")
+  submittedAt       DateTime        @default(now()) @map("submitted_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@index([status])
+  @@index([submittedAt])
+  @@map("proposal_requests")
+}
+
+model PricingTier {
+  id            String     @id @default(cuid())
+  tierName      String     @map("tier_name")
+  priceRangeText String    @map("price_range_text")
+  description   String?
+  visibility    Visibility @default(PUBLIC)
+  displayOrder  Int        @default(0) @map("display_order")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  @@index([visibility])
+  @@index([displayOrder])
+  @@map("pricing_tiers")
+}
+
+// Module D: CRM Pipeline & Direct Enquiries
+enum LeadSource {
+  PROPOSAL
+  EVENT
+  DIRECT_ENQUIRY
+}
+
+enum PipelineStatus {
+  NEW
+  CONTACTED
+  PROPOSAL_SENT
+  NEGOTIATING
+  CONVERTED
+  LOST
+  ARCHIVED
+}
+
+model LeadPipeline {
+  id                String          @id @default(cuid())
+  source            LeadSource
+  sourceRecordId    String?         @map("source_record_id") // FK to respective source table
+  contactName       String          @map("contact_name")
+  email             String
+  organisation      String?
+  topicInterest     String?         @map("topic_interest")
+  status            PipelineStatus  @default(NEW)
+  followUpDate      DateTime?       @map("follow_up_date")
+  adminNotes        String?         @map("admin_notes")
+  lastActivityAt    DateTime        @default(now()) @map("last_activity_at")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@index([status])
+  @@index([source])
+  @@index([createdAt])
+  @@map("leads_pipeline")
+}
+
+model DirectEnquiry {
+  id            String   @id @default(cuid())
+  name          String
+  email         String
+  phone         String?
+  organisation  String?
+  message       String
+  consentFlag   Boolean  @map("consent_flag")
+  submittedAt   DateTime @default(now()) @map("submitted_at")
+
+  @@index([email])
+  @@index([submittedAt])
+  @@map("direct_enquiries")
+}
+
+// Email Logging
+enum EmailStatus {
+  SENT
+  FAILED
+  RETRYING
+}
+
+model EmailLog {
+  id              String       @id @default(cuid())
+  recipientEmail  String       @map("recipient_email")
+  subject         String?
+  templateName    String?      @map("template_name")
+  status          EmailStatus
+  sentAt          DateTime?    @map("sent_at")
+  errorMessage    String?      @map("error_message")
+  leadId          String?      @map("lead_id")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  @@index([recipientEmail])
+  @@index([status])
+  @@index([leadId])
+  @@index([createdAt])
+  @@map("email_log")
+}
+
+// Module E: Analytics Events
+model AnalyticsEvent {
+  id            String    @id @default(cuid())
+  eventType     String    @map("event_type") // pdf_download, whatsapp_click, proposal_submit, etc.
+  eventData     Json?     @map("event_data") // { type: 'summary' }
+  referrerUrl   String?   @map("referrer_url")
+  userAgent     String?   @map("user_agent")
+  ipHash        String?   @map("ip_hash") // hashed for privacy
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("analytics_events")
+}
+
+// PDF Download Tracking
+model PdfDownloadLog {
+  id            String    @id @default(cuid())
+  pdfType       String    @map("pdf_type") // summary | full
+  referrerPage  String?   @map("referrer_page")
+  userAgent     String?   @map("user_agent")
+  ipHash        String?   @map("ip_hash")
+  downloadedAt  DateTime  @default(now()) @map("downloaded_at")
+
+  @@index([pdfType])
+  @@index([downloadedAt])
+  @@map("pdf_download_logs")
+}
+
+// Extended Portal Settings for CR-04
+model PortalSettings {
+  id                              String   @id @default("singleton")
+  
+  // WhatsApp Configuration
+  whatsappNumber                  String?  @map("whatsapp_number")
+  whatsappPrefillMessage          String?  @map("whatsapp_prefill_message") @default("Hi, I'm interested in your training services.")
+  
+  // Sticky CTA
+  stickyCtaEnabled                Boolean  @default(true) @map("sticky_cta_enabled")
+  
+  // Google Analytics
+  ga4MeasurementId                String?  @map("ga4_measurement_id")
+  
+  // SEO Settings
+  seoHomepageTitle                String?  @map("seo_homepage_title") @default("MSH Corporate Trainer | Professional Training & Consulting")
+  seoHomepageDescription          String?  @map("seo_homepage_description")
+  ogImageUrl                      String?  @map("og_image_url")
+  
+  // Proposal Settings
+  proposalDuplicateCooldownHours  Int      @default(48) @map("proposal_duplicate_cooldown_hours")
+  
+  // Follow-up Automation
+  followUpTriggerDays             Int      @default(3) @map("follow_up_trigger_days")
+  
+  // Email Templates
+  emailConfirmationSubject        String?  @map("email_confirmation_subject") @default("Thank you for your interest")
+  emailConfirmationBody           String?  @map("email_confirmation_body")
+  emailFollowupSubject            String?  @map("email_followup_subject") @default("Following up on your training inquiry")
+  emailFollowupBody               String?  @map("email_followup_body")
+  
+  // PDF Generation Toggles
+  pdfIncludeCertifications        Boolean  @default(true) @map("pdf_include_certifications")
+  pdfIncludeExpertise             Boolean  @default(true) @map("pdf_include_expertise")
+  pdfIncludeClients               Boolean  @default(true) @map("pdf_include_clients")
+  pdfIncludeExperience            Boolean  @default(true) @map("pdf_include_experience")
+  
+  updatedAt                       DateTime @updatedAt @map("updated_at")
+
+  @@map("portal_settings")
 }

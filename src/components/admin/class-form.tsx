@@ -1,6 +1,7 @@
 "use client"
 
-import { useForm } from "react-hook-form"
+import { useState, useEffect } from "react"
+import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { classSchema, type ClassFormData } from "@/lib/validations/class"
 import { Button } from "@/components/ui/button"
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useUnsavedChanges } from "@/lib/hooks/use-unsaved-changes"
+import { Plus, Trash2, Calendar } from "lucide-react"
 
 type ClassFormProps = {
   defaultValues?: Partial<ClassFormData>
@@ -30,19 +32,35 @@ export function ClassForm({
   isLoading = false,
   submitText = "Create Class",
 }: ClassFormProps) {
+  const [dateType, setDateType] = useState<"STRAIGHT" | "SEGREGATED">(
+    defaultValues?.dateType || "STRAIGHT"
+  )
+  const [numberOfDays, setNumberOfDays] = useState(defaultValues?.numberOfDays || 1)
+
   const {
     register,
     handleSubmit,
     formState: { errors, isDirty },
     setValue,
     watch,
+    control,
+    reset,
   } = useForm<ClassFormData>({
     resolver: zodResolver(classSchema),
-    defaultValues: defaultValues || {
+    defaultValues: {
       status: "UPCOMING",
       joinEnabled: true,
       showOnPublicProfile: true,
+      dateType: "STRAIGHT",
+      numberOfDays: 1,
+      sessions: [],
+      ...defaultValues,
     },
+  })
+
+  const { fields, append, remove, replace } = useFieldArray({
+    control,
+    name: "sessions",
   })
 
   useUnsavedChanges(isDirty)
@@ -50,6 +68,110 @@ export function ClassForm({
   const watchClientType = watch("clientType")
   const watchMode = watch("mode")
   const watchStatus = watch("status")
+  const watchStartDatetime = watch("startDatetime")
+  const watchDateType = watch("dateType")
+  const watchNumberOfDays = watch("numberOfDays")
+
+  // Watch for date type changes
+  useEffect(() => {
+    if (watchDateType) {
+      setDateType(watchDateType)
+    }
+  }, [watchDateType])
+
+  // Watch for number of days changes
+  useEffect(() => {
+    setNumberOfDays(watchNumberOfDays || 1)
+  }, [watchNumberOfDays])
+
+  // Update sessions when date type or number of days changes
+  useEffect(() => {
+    if (dateType === "SEGREGATED") {
+      const currentSessions = fields.length
+      const targetSessions = numberOfDays
+
+      if (currentSessions < targetSessions) {
+        // Add more sessions
+        for (let i = currentSessions; i < targetSessions; i++) {
+          append({
+            sessionDate: new Date().toISOString().split("T")[0],
+            startTime: "09:00",
+            endTime: "17:00",
+          })
+        }
+      } else if (currentSessions > targetSessions) {
+        // Remove extra sessions
+        for (let i = currentSessions - 1; i >= targetSessions; i--) {
+          remove(i)
+        }
+      }
+    } else {
+      // Clear sessions for straight dates
+      if (fields.length > 0) {
+        replace([])
+      }
+    }
+  }, [dateType, numberOfDays, append, remove, replace, fields.length])
+
+  // Calculate end date based on start date and number of days for straight dates
+  const calculateEndDate = (startDateStr: string, days: number) => {
+    if (!startDateStr) return ""
+    const startDate = new Date(startDateStr)
+    // Add (days - 1) to get the end date (e.g., 3 days: Day 1, Day 2, Day 3)
+    const endDate = new Date(startDate)
+    endDate.setDate(startDate.getDate() + days - 1)
+    
+    // Format as datetime-local
+    const year = endDate.getFullYear()
+    const month = String(endDate.getMonth() + 1).padStart(2, "0")
+    const day = String(endDate.getDate()).padStart(2, "0")
+    const hours = String(endDate.getHours()).padStart(2, "0")
+    const minutes = String(endDate.getMinutes()).padStart(2, "0")
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}`
+  }
+
+  // Extract time from datetime for segregated sessions
+  const extractTime = (datetimeStr: string) => {
+    if (!datetimeStr) return { startTime: "09:00", endTime: "17:00" }
+    const date = new Date(datetimeStr)
+    const hours = String(date.getHours()).padStart(2, "0")
+    const minutes = String(date.getMinutes()).padStart(2, "0")
+    return `${hours}:${minutes}`
+  }
+
+  // Handle start date change for straight dates
+  const handleStraightStartChange = (value: string) => {
+    setValue("startDatetime", value)
+    // Update end date based on number of days
+    const endDateStr = calculateEndDate(value, numberOfDays)
+    if (endDateStr) {
+      setValue("endDatetime", endDateStr)
+    }
+  }
+
+  // Handle number of days change for straight dates
+  const handleNumberOfDaysChange = (value: number) => {
+    setValue("numberOfDays", value)
+    if (watchStartDatetime) {
+      const endDateStr = calculateEndDate(watchStartDatetime, value)
+      if (endDateStr) {
+        setValue("endDatetime", endDateStr)
+      }
+    }
+  }
+
+  // Format date for display
+  const formatDateDisplay = (dateStr: string) => {
+    if (!dateStr) return ""
+    const date = new Date(dateStr)
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    })
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -174,36 +296,201 @@ export function ClassForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="startDatetime">Start Date & Time *</Label>
+          {/* Date Scheduling Section */}
+          <div className="border-t pt-4 mt-4">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Date Scheduling
+            </h3>
+
+            {/* Number of Days */}
+            <div className="mb-4">
+              <Label htmlFor="numberOfDays">Number of Days *</Label>
               <Input
-                id="startDatetime"
-                type="datetime-local"
-                {...register("startDatetime")}
+                id="numberOfDays"
+                type="number"
+                min={1}
+                max={30}
+                {...register("numberOfDays", { valueAsNumber: true })}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 1
+                  handleNumberOfDaysChange(value)
+                }}
                 disabled={isLoading}
+                className="w-32"
               />
-              {errors.startDatetime && (
+              {errors.numberOfDays && (
                 <p className="text-sm text-red-600 mt-1">
-                  {errors.startDatetime.message}
+                  {errors.numberOfDays.message}
                 </p>
               )}
             </div>
 
-            <div>
-              <Label htmlFor="endDatetime">End Date & Time *</Label>
-              <Input
-                id="endDatetime"
-                type="datetime-local"
-                {...register("endDatetime")}
-                disabled={isLoading}
-              />
-              {errors.endDatetime && (
+            {/* Date Type Selection */}
+            <div className="mb-4">
+              <Label>Date Type *</Label>
+              <div className="flex gap-4 mt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="STRAIGHT"
+                    {...register("dateType")}
+                    checked={dateType === "STRAIGHT"}
+                    onChange={() => setValue("dateType", "STRAIGHT")}
+                    disabled={isLoading}
+                    className="h-4 w-4"
+                  />
+                  <span>Straight (Consecutive Days)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="SEGREGATED"
+                    {...register("dateType")}
+                    checked={dateType === "SEGREGATED"}
+                    onChange={() => setValue("dateType", "SEGREGATED")}
+                    disabled={isLoading}
+                    className="h-4 w-4"
+                  />
+                  <span>Segregated (Specific Dates)</span>
+                </label>
+              </div>
+              {errors.dateType && (
                 <p className="text-sm text-red-600 mt-1">
-                  {errors.endDatetime.message}
+                  {errors.dateType.message}
                 </p>
               )}
             </div>
+
+            {/* Straight Dates - Start and End Date */}
+            {dateType === "STRAIGHT" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                <div>
+                  <Label htmlFor="startDatetime">Start Date & Time *</Label>
+                  <Input
+                    id="startDatetime"
+                    type="datetime-local"
+                    {...register("startDatetime")}
+                    onChange={(e) => handleStraightStartChange(e.target.value)}
+                    disabled={isLoading}
+                  />
+                  {errors.startDatetime && (
+                    <p className="text-sm text-red-600 mt-1">
+                      {errors.startDatetime.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="endDatetime">End Date & Time *</Label>
+                  <Input
+                    id="endDatetime"
+                    type="datetime-local"
+                    {...register("endDatetime")}
+                    disabled={isLoading}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Auto-calculated based on {numberOfDays} day(s)
+                  </p>
+                  {errors.endDatetime && (
+                    <p className="text-sm text-red-600 mt-1">
+                      {errors.endDatetime.message}
+                    </p>
+                  )}
+                </div>
+
+                {watchStartDatetime && (
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-green-600 bg-green-50 p-3 rounded">
+                      <strong>Class Schedule:</strong> {numberOfDays} day(s) from{" "}
+                      {formatDateDisplay(watchStartDatetime)} to{" "}
+                      {formatDateDisplay(watch("endDatetime"))}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Segregated Dates - Individual Day Inputs */}
+            {dateType === "SEGREGATED" && (
+              <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">
+                    Session Dates ({fields.length} of {numberOfDays} days)
+                  </h4>
+                </div>
+
+                {fields.map((field, index) => (
+                  <div
+                    key={field.id}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-white rounded border"
+                  >
+                    <div>
+                      <Label htmlFor={`sessions.${index}.sessionDate`}>
+                        Day {index + 1} Date *
+                      </Label>
+                      <Input
+                        id={`sessions.${index}.sessionDate`}
+                        type="date"
+                        {...register(`sessions.${index}.sessionDate`)}
+                        disabled={isLoading}
+                      />
+                      {errors.sessions?.[index]?.sessionDate && (
+                        <p className="text-sm text-red-600 mt-1">
+                          {errors.sessions[index]?.sessionDate?.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor={`sessions.${index}.startTime`}>
+                        Start Time *
+                      </Label>
+                      <Input
+                        id={`sessions.${index}.startTime`}
+                        type="time"
+                        {...register(`sessions.${index}.startTime`)}
+                        disabled={isLoading}
+                      />
+                      {errors.sessions?.[index]?.startTime && (
+                        <p className="text-sm text-red-600 mt-1">
+                          {errors.sessions[index]?.startTime?.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor={`sessions.${index}.endTime`}>
+                        End Time *
+                      </Label>
+                      <Input
+                        id={`sessions.${index}.endTime`}
+                        type="time"
+                        {...register(`sessions.${index}.endTime`)}
+                        disabled={isLoading}
+                      />
+                      {errors.sessions?.[index]?.endTime && (
+                        <p className="text-sm text-red-600 mt-1">
+                          {errors.sessions[index]?.endTime?.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {fields.length === 0 && (
+                  <p className="text-center text-gray-500 py-4">
+                    Please set the number of days above to add session dates
+                  </p>
+                )}
+
+                {errors.sessions && typeof errors.sessions.message === "string" && (
+                  <p className="text-sm text-red-600">
+                    {errors.sessions.message}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div>

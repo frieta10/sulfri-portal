@@ -169,13 +169,25 @@ function parseSingleOB3(data: any): OB3Credential | null {
 }
 
 /**
- * Parse multiple OB3 credentials from a JSON array or single object
+ * Parse multiple OB3 credentials from a JSON array, single object, or VerifiablePresentation
  */
 export function parseOB3Credentials(jsonString: string): OB3Credential[] {
   try {
     const data = JSON.parse(jsonString)
     const credentials: OB3Credential[] = []
-    
+
+    // Handle VerifiablePresentation wrapper (e.g. Credly multi-badge exports)
+    if (data && !Array.isArray(data) && data.verifiableCredential) {
+      const items = Array.isArray(data.verifiableCredential)
+        ? data.verifiableCredential
+        : [data.verifiableCredential]
+      for (const item of items) {
+        const parsed = parseSingleOB3(item)
+        if (parsed) credentials.push(parsed)
+      }
+      return credentials
+    }
+
     // Handle array of credentials
     if (Array.isArray(data)) {
       for (const item of data) {
@@ -184,11 +196,11 @@ export function parseOB3Credentials(jsonString: string): OB3Credential[] {
       }
       return credentials
     }
-    
+
     // Handle single credential
     const single = parseSingleOB3(data)
     if (single) credentials.push(single)
-    
+
     return credentials
   } catch (error) {
     console.error("Failed to parse OB3 credentials:", error)
@@ -332,47 +344,56 @@ export function generateSlugFromOB3(credential: OB3Credential): string {
 }
 
 /**
+ * Check whether a single parsed JSON object looks like an OB3 credential or presentation
+ */
+function looksLikeOB3Item(item: any): boolean {
+  if (!item || typeof item !== 'object') return false
+
+  if (item["@context"]) {
+    const context = Array.isArray(item["@context"]) ? item["@context"] : [item["@context"]]
+    if (context.some((ctx: string) =>
+      ctx.includes("credentials/v1") ||
+      ctx.includes("ob/v3p0") ||
+      ctx.includes("openbadges")
+    )) return true
+  }
+
+  if (item.type) {
+    const types = Array.isArray(item.type) ? item.type : [item.type]
+    if (types.some((t: string) =>
+      t.includes("VerifiableCredential") ||
+      t.includes("OpenBadge") ||
+      t.includes("Achievement")
+    )) return true
+  }
+
+  if (item.credentialSubject) return true
+  if (item.issuer && (item.name || item.achievement || item.credentialSubject)) return true
+
+  return false
+}
+
+/**
  * Check if a string looks like OB3 JSON
  */
 export function isOB3Format(jsonString: string): boolean {
   try {
     const data = JSON.parse(jsonString)
-    
-    // Check for OB3 specific markers
-    if (data["@context"]) {
-      const context = Array.isArray(data["@context"]) ? data["@context"] : [data["@context"]]
-      if (context.some((ctx: string) => 
-        ctx.includes("credentials/v1") ||
-        ctx.includes("ob/v3p0") ||
-        ctx.includes("openbadges")
-      )) {
-        return true
-      }
+
+    // Handle array of credentials — check the first element
+    if (Array.isArray(data)) {
+      return data.length > 0 && looksLikeOB3Item(data[0])
     }
-    
-    // Check for VerifiableCredential type
-    if (data.type) {
-      const types = Array.isArray(data.type) ? data.type : [data.type]
-      if (types.some((t: string) => 
-        t.includes("VerifiableCredential") || 
-        t.includes("OpenBadge") ||
-        t.includes("Achievement")
-      )) {
-        return true
-      }
+
+    // Handle VerifiablePresentation wrapper
+    if (data.verifiableCredential) {
+      const items = Array.isArray(data.verifiableCredential)
+        ? data.verifiableCredential
+        : [data.verifiableCredential]
+      return items.length > 0 && looksLikeOB3Item(items[0])
     }
-    
-    // Check for credentialSubject (OB3 structure)
-    if (data.credentialSubject) {
-      return true
-    }
-    
-    // Credly OB3 format may have different structure
-    if (data.issuer && (data.name || data.achievement || data.credentialSubject)) {
-      return true
-    }
-    
-    return false
+
+    return looksLikeOB3Item(data)
   } catch {
     return false
   }
