@@ -41,11 +41,12 @@ export function ClassForm({
   const {
     register,
     handleSubmit,
-    formState: { errors, isDirty },
+    formState: { errors, isDirty, isSubmitting, isValid },
     setValue,
     watch,
     control,
     reset,
+    trigger,
   } = useForm<ClassFormData>({
     resolver: zodResolver(classSchema),
     defaultValues: {
@@ -55,8 +56,12 @@ export function ClassForm({
       dateType: "STRAIGHT",
       numberOfDays: 1,
       sessions: [],
+      // Initialize datetime fields for straight dates
+      startDatetime: new Date().toISOString().slice(0, 16),
+      endDatetime: new Date(Date.now() + 3600000).toISOString().slice(0, 16),
       ...defaultValues,
     },
+    mode: "onChange",
   })
 
   const { fields, append, remove, replace } = useFieldArray({
@@ -176,6 +181,7 @@ export function ClassForm({
 
   const handleFormSubmit = async (data: ClassFormData) => {
     setSubmitError(null)
+    console.log("Form submit triggered with data:", JSON.stringify(data, null, 2))
     try {
       // Ensure sessions is at least an empty array
       const submitData = {
@@ -190,6 +196,13 @@ export function ClassForm({
       throw error
     }
   }
+
+  // Debug: log validation errors
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      console.log("Form validation errors:", errors)
+    }
+  }, [errors])
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
@@ -591,10 +604,40 @@ export function ClassForm({
         </CardContent>
       </Card>
 
+      {/* Validation Errors Summary */}
+      {Object.keys(errors).length > 0 && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <p className="font-medium">Please fix the following errors:</p>
+          <ul className="text-sm mt-2 list-disc list-inside">
+            {errors.title && <li>Title: {errors.title.message}</li>}
+            {errors.clientName && <li>Client Name: {errors.clientName.message}</li>}
+            {errors.clientType && <li>Client Type: {errors.clientType.message}</li>}
+            {errors.topicCategory && <li>Topic Category: {errors.topicCategory.message}</li>}
+            {errors.mode && <li>Mode: {errors.mode.message}</li>}
+            {errors.numberOfDays && <li>Number of Days: {errors.numberOfDays.message}</li>}
+            {errors.startDatetime && <li>Start Date: {errors.startDatetime.message}</li>}
+            {errors.endDatetime && <li>End Date: {errors.endDatetime.message}</li>}
+            {errors.sessions && <li>Sessions: {errors.sessions.message || "Invalid sessions"}</li>}
+          </ul>
+        </div>
+      )}
+
       {/* Submit Button */}
       <div className="flex justify-end gap-4">
-        <Button type="submit" disabled={isLoading} size="lg">
-          {isLoading ? "Saving..." : submitText}
+        <Button 
+          type="submit" 
+          disabled={isLoading || isSubmitting} 
+          size="lg"
+          onClick={() => {
+            console.log("Submit button clicked")
+            console.log("Form is valid:", isValid)
+            console.log("Form errors:", errors)
+            trigger().then((isValid) => {
+              console.log("Validation result:", isValid)
+            })
+          }}
+        >
+          {isLoading || isSubmitting ? "Saving..." : submitText}
         </Button>
       </div>
     </form>
