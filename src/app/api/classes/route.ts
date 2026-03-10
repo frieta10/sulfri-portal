@@ -156,14 +156,15 @@ export async function POST(request: NextRequest) {
     console.error("Error creating class:", error)
 
     if (error.name === "ZodError") {
+      console.error("Zod validation errors:", JSON.stringify(error.errors, null, 2))
       return NextResponse.json(
-        { error: "Validation error", details: error.errors },
+        { message: "Validation error", details: error.errors },
         { status: 400 }
       )
     }
 
     return NextResponse.json(
-      { error: "Failed to create class" },
+      { message: error.message || "Failed to create class" },
       { status: 500 }
     )
   }

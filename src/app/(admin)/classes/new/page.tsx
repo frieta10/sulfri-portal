@@ -23,7 +23,8 @@ export default function NewClassPage() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || "Failed to create class")
+        console.error("API error:", error)
+        throw new Error(error.message || error.error || "Failed to create class")
       }
 
       const newClass = await response.json()

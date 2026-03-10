@@ -36,6 +36,7 @@ export function ClassForm({
     defaultValues?.dateType || "STRAIGHT"
   )
   const [numberOfDays, setNumberOfDays] = useState(defaultValues?.numberOfDays || 1)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const {
     register,
@@ -173,8 +174,31 @@ export function ClassForm({
     })
   }
 
+  const handleFormSubmit = async (data: ClassFormData) => {
+    setSubmitError(null)
+    try {
+      // Ensure sessions is at least an empty array
+      const submitData = {
+        ...data,
+        sessions: data.sessions || [],
+      }
+      console.log("Submitting form data:", JSON.stringify(submitData, null, 2))
+      await onSubmit(submitData)
+    } catch (error: any) {
+      console.error("Form submission error:", error)
+      setSubmitError(error.message || "Failed to save class")
+      throw error
+    }
+  }
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      {submitError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <p className="font-medium">Error</p>
+          <p className="text-sm">{submitError}</p>
+        </div>
+      )}
       {/* Basic Information */}
       <Card>
         <CardHeader>
