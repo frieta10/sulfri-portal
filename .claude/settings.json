@@ -2,7 +2,15 @@
   "permissions": {
     "allow": [
       "Bash(git push --set-upstream origin test/agent-kit)",
-      "Bash(vercel --prod)"
+      "Bash(vercel --prod)",
+      "Bash(npm run build)",
+      "Bash(claude mcp add --scope user --transport http figma https://mcp.figma.com/mcp)",
+      "Bash(start https://mcp.figma.com/mcp)",
+      "mcp__claude_ai_Figma__whoami",
+      "Bash(find \"c:/laragon/www/sulfri-portal/src/app\" -type d -name \"\\(public\\)\")",
+      "Bash(find \"c:/laragon/www/sulfri-portal/src/app/\\(public\\)\" -type f -name \"*.tsx\")",
+      "Bash(ls -la \"c:/laragon/www/sulfri-portal/src/app/\\(public\\)/\")",
+      "Bash(find \"c:/laragon/www/sulfri-portal/src/app/\\(admin\\)\" -name \"page.tsx\")"
     ]
   }
 }

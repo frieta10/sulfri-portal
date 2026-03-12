@@ -163,7 +163,37 @@ function parseSingleOB3(data: any): OB3Credential | null {
       image: data.image,
     }
   }
-  
+
+  // Format 5: Has credentialSubject (without achievement) + issuer — reconstruct from available data.
+  // Handles Credly exports where the badge name sits at the root and achievement is implicit.
+  if (data.credentialSubject && data.issuer) {
+    const name = data.name || data.credentialSubject.name || data.credentialSubject.achievement?.name
+    if (name) {
+      return {
+        "@context": data["@context"] || ["https://www.w3.org/2018/credentials/v1"],
+        id: data.id || `urn:uuid:${Date.now()}`,
+        type: Array.isArray(data.type) ? data.type : ["VerifiableCredential"],
+        issuer: data.issuer,
+        validFrom: data.validFrom || data.issuedOn || new Date().toISOString(),
+        validUntil: data.validUntil || data.expires,
+        credentialSubject: {
+          ...data.credentialSubject,
+          achievement: {
+            id: data.id || `urn:uuid:${Date.now()}`,
+            type: ["Achievement"],
+            name,
+            description: data.description || data.credentialSubject.description,
+            criteria: data.criteria || data.credentialSubject.criteria,
+            image: data.image || data.credentialSubject.image,
+          },
+        },
+        name,
+        description: data.description,
+        image: data.image,
+      }
+    }
+  }
+
   console.error("Could not parse OB3 format:", Object.keys(data))
   return null
 }
@@ -302,11 +332,11 @@ export function validateOB3Credential(credential: OB3Credential): boolean {
   // Check issuer exists
   if (!credential.issuer) return false
   
-  // Check issuer name
+  // Check issuer name (fall back to issuer.id if name is absent)
   const issuerName = typeof credential.issuer === 'string'
     ? credential.issuer
-    : credential.issuer.name
-  
+    : credential.issuer.name || credential.issuer.id
+
   if (!issuerName) return false
   
   // Must have credentialSubject with achievement OR achievement at root

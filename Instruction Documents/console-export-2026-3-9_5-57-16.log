@@ -1,0 +1,42 @@
+Error downloading profile: Error: Failed to download PDF
+    m NextJS
+cbe07f2814f3625c.js:1:59008
+Error in parsing value for '-webkit-text-size-adjust'.  Declaration dropped. ff41359634659fbe.css:2:1248
+Unknown property '-moz-column-gap'.  Declaration dropped. ff41359634659fbe.css:2:14145
+The resource at “https://sulfri-portal.vercel.app/_next/static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2” preloaded with link preload was not used within a few seconds. Make sure all attributes of the preload tag are set correctly. sulfri-portal.vercel.app
+GET
+https://sulfri-portal.vercel.app/msh-logo.svg
+[HTTP/1.1 200 OK 0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/870000b17332dc67.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/8b94e688af5aaec8.js
+[HTTP/2 200  0ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/auth/providers
+[HTTP/2 200  639ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/auth/csrf
+[HTTP/2 200  257ms]
+
+XHRPOST
+https://sulfri-portal.vercel.app/api/auth/callback/credentials
+[HTTP/2 401  452ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/auth/providers
+[HTTP/2 200  261ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/auth/csrf
+[HTTP/2 200  247ms]
+
+XHRPOST
+https://sulfri-portal.vercel.app/api/auth/callback/credentials
+[HTTP/2 401  422ms]
+

@@ -1,28 +1,126 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
   Briefcase,
-  Code,
+  MonitorSmartphone,
   Cpu,
-  Target,
+  ShieldCheck,
   BookOpen,
   ChevronRight,
   Loader2,
+  FolderTree,
+  GraduationCap,
+  Users,
+  Target,
+  Lightbulb,
+  LineChart,
+  Code,
+  Building2,
+  HardHat,
+  Leaf,
 } from "lucide-react"
 
-interface TrainingCategory {
-  id: string
-  title: string
-  icon: React.ReactNode
-  color: string
-  bgColor: string
-  courses: {
-    name: string
-    completedCount: number
-  }[]
+// Domain Knowledge Areas with their training delivery topics
+const DOMAIN_STRUCTURE: Record<
+  string,
+  {
+    title: string
+    description: string
+    icon: React.ReactNode
+    colorClass: string
+    bgClass: string
+    borderClass: string
+    topics: string[]
+  }
+> = {
+  "Project Management": {
+    title: "Project Management & Productivity",
+    description: "Comprehensive project management training from fundamentals to advanced methodologies",
+    icon: <Briefcase className="w-6 h-6" />,
+    colorClass: "text-blue-700",
+    bgClass: "bg-blue-50",
+    borderClass: "border-blue-200",
+    topics: [
+      "Project Management Fundamentals (Basic, Intermediate, Advanced)",
+      "Agile & Scrum Methodologies",
+      "Project Governance & PMO Awareness",
+      "AI in Project Management",
+    ],
+  },
+  "Digital & Technology": {
+    title: "Digital & Technology",
+    description: "Digital transformation, cloud computing, and productivity tools training",
+    icon: <MonitorSmartphone className="w-6 h-6" />,
+    colorClass: "text-violet-700",
+    bgClass: "bg-violet-50",
+    borderClass: "border-violet-200",
+    topics: [
+      "Microsoft 365 Awareness Programme",
+      "SharePoint, Outlook & Teams Productivity",
+      "Cyber Security Awareness",
+      "Cloud Fundamentals (Azure & Google Cloud)",
+      "Data Visualization & Storytelling",
+      "Prompt Engineering & AI Fundamentals",
+    ],
+  },
+  "Engineering": {
+    title: "Engineering Literacy & Applied Engineering",
+    description: "Technical engineering training for project and operations professionals",
+    icon: <HardHat className="w-6 h-6" />,
+    colorClass: "text-amber-700",
+    bgClass: "bg-amber-50",
+    borderClass: "border-amber-200",
+    topics: [
+      "Engineering Literacy for Project & Operations Professionals — Electrical Systems",
+      "Engineering Literacy for Project & Operations Professionals — Civil & Construction Works",
+      "Applied Engineering Essentials for Project Delivery — Electrical Systems",
+      "Applied Engineering Essentials for Project Delivery — Civil & Construction Works",
+    ],
+  },
+  "Workplace Culture": {
+    title: "Workplace Conduct & Culture",
+    description: "Building respectful, ethical, and productive workplace environments",
+    icon: <Users className="w-6 h-6" />,
+    colorClass: "text-emerald-700",
+    bgClass: "bg-emerald-50",
+    borderClass: "border-emerald-200",
+    topics: [
+      "Workplace Anti-Bullying",
+      "Respectful & Ethical Workplace Behaviour",
+      "Managing Workplace Conflict, Misconduct & Power Dynamics",
+      "Leadership Accountability & Duty of Care",
+      "Building a Speak-Up & Reporting Culture",
+      "Workplace Boundaries, Professional Behaviour & Digital Conduct",
+      "Preventing Toxic Work Environments & Escalation Failures",
+      "One Million Dollar Employee Mindset",
+    ],
+  },
+}
+
+// Icon mapping for specific training topics
+const getTopicIcon = (topic: string) => {
+  const lowerTopic = topic.toLowerCase()
+  if (lowerTopic.includes("agile") || lowerTopic.includes("scrum"))
+    return <Target className="w-4 h-4" />
+  if (lowerTopic.includes("ai") || lowerTopic.includes("prompt"))
+    return <Lightbulb className="w-4 h-4" />
+  if (lowerTopic.includes("data") || lowerTopic.includes("analytic"))
+    return <LineChart className="w-4 h-4" />
+  if (lowerTopic.includes("code") || lowerTopic.includes("cloud"))
+    return <Code className="w-4 h-4" />
+  if (lowerTopic.includes("cyber") || lowerTopic.includes("security"))
+    return <ShieldCheck className="w-4 h-4" />
+  if (lowerTopic.includes("engineering") || lowerTopic.includes("electrical") || lowerTopic.includes("civil"))
+    return <HardHat className="w-4 h-4" />
+  if (lowerTopic.includes("microsoft") || lowerTopic.includes("sharepoint") || lowerTopic.includes("teams"))
+    return <MonitorSmartphone className="w-4 h-4" />
+  if (lowerTopic.includes("leadership") || lowerTopic.includes("management"))
+    return <Building2 className="w-4 h-4" />
+  if (lowerTopic.includes("fundamental") || lowerTopic.includes("basic"))
+    return <BookOpen className="w-4 h-4" />
+  return <GraduationCap className="w-4 h-4" />
 }
 
 interface ClassData {
@@ -32,208 +130,178 @@ interface ClassData {
   topicCategory: string
 }
 
+interface DomainCardProps {
+  domainKey: string
+  domain: (typeof DOMAIN_STRUCTURE)["Project Management"]
+  classCount: number
+  isExpanded: boolean
+  onToggle: () => void
+}
+
+function DomainCard({ domainKey, domain, classCount, isExpanded, onToggle }: DomainCardProps) {
+  return (
+    <div
+      className={`overflow-hidden rounded-xl border-2 transition-all duration-300 ${
+        isExpanded ? domain.borderClass : "border-gray-200"
+      } bg-white hover:shadow-lg`}
+    >
+      {/* Domain Header */}
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full px-6 py-5 flex items-center justify-between text-left"
+      >
+        <div className="flex items-center gap-5">
+          <div
+            className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 ${domain.bgClass} ${domain.colorClass} shadow-sm`}
+          >
+            {domain.icon}
+          </div>
+          <div>
+            <h3 className="font-bold text-gray-900 text-lg leading-tight">{domain.title}</h3>
+            <p className="text-sm text-gray-500 mt-1 line-clamp-1">{domain.description}</p>
+            <div className="flex items-center gap-3 mt-2">
+              <Badge variant="secondary" className={`text-xs ${domain.bgClass} ${domain.colorClass} border-0`}>
+                {domain.topics.length} Training Topics
+              </Badge>
+              {classCount > 0 && (
+                <span className="text-xs text-gray-400">
+                  {classCount} classes delivered
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+            isExpanded ? `${domain.bgClass} ${domain.colorClass}` : "bg-gray-100 text-gray-400"
+          }`}
+        >
+          <ChevronRight
+            className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? "rotate-90" : ""}`}
+          />
+        </div>
+      </button>
+
+      {/* Expandable Topics Section */}
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className={`px-6 pb-6 pt-2 border-t ${domain.borderClass}`}>
+          <div className="flex items-center gap-2 mb-4 mt-4">
+            <FolderTree className={`w-4 h-4 ${domain.colorClass}`} />
+            <span className="text-sm font-semibold text-gray-700">Training Delivery Topics</span>
+          </div>
+          <div className="grid gap-3">
+            {domain.topics.map((topic, idx) => (
+              <div
+                key={idx}
+                className={`flex items-start gap-3 p-3 rounded-lg ${domain.bgClass} border ${domain.borderClass} hover:shadow-sm transition-shadow`}
+              >
+                <div className={`shrink-0 mt-0.5 ${domain.colorClass}`}>{getTopicIcon(topic)}</div>
+                <span className="text-sm text-gray-700 leading-relaxed">{topic}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function TrainingExpertise({ defaultExpanded = false }: { defaultExpanded?: boolean }) {
-  const [expandedCategories, setExpandedCategories] = useState<string[]>(
-    defaultExpanded ? ["all"] : []
+  const [expandedDomains, setExpandedDomains] = useState<string[]>(
+    defaultExpanded ? Object.keys(DOMAIN_STRUCTURE) : []
   )
   const [classes, setClasses] = useState<ClassData[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const response = await fetch("/api/experience")
+        if (response.ok) {
+          const data = await response.json()
+          setClasses(data.classes || [])
+        }
+      } catch (error) {
+        console.error("Error fetching classes:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
     fetchClasses()
   }, [])
 
-  const fetchClasses = async () => {
-    try {
-      const response = await fetch("/api/experience")
-      if (response.ok) {
-        const data = await response.json()
-        setClasses(data.classes || [])
-      }
-    } catch (error) {
-      console.error("Error fetching classes:", error)
-    } finally {
-      setLoading(false)
-    }
+  // Count classes per domain
+  const getClassCountForDomain = (domainKey: string) => {
+    return classes.filter((c) => c.topicCategory === domainKey).length
   }
 
-  // Build training categories from actual classes data
-  const getCategoriesFromClasses = (): TrainingCategory[] => {
-    // Get unique topic categories from classes
-    const topicCategories = Array.from(new Set(classes.map((c) => c.topicCategory)))
-    
-    // Map topics to categories
-    const categoryMap: Record<string, { title: string; icon: React.ReactNode; color: string; bgColor: string }> = {
-      "Project Management": {
-        title: "Project Management & Productivity",
-        icon: <Briefcase className="w-6 h-6" />,
-        color: "text-blue-400",
-        bgColor: "bg-blue-500/10",
-      },
-      "Digital & Technology": {
-        title: "Digital & Technology",
-        icon: <Code className="w-6 h-6" />,
-        color: "text-purple-400",
-        bgColor: "bg-purple-500/10",
-      },
-      "Data & Analytics": {
-        title: "Data, Analytics & Design",
-        icon: <Cpu className="w-6 h-6" />,
-        color: "text-emerald-400",
-        bgColor: "bg-emerald-500/10",
-      },
-      "Engineering": {
-        title: "Engineering Literacy",
-        icon: <Cpu className="w-6 h-6" />,
-        color: "text-orange-400",
-        bgColor: "bg-orange-500/10",
-      },
-      "Workplace Culture": {
-        title: "Workplace Conduct & Culture",
-        icon: <Target className="w-6 h-6" />,
-        color: "text-rose-400",
-        bgColor: "bg-rose-500/10",
-      },
-    }
-
-    // Build categories from actual class data
-    return topicCategories.map((topic) => {
-      const categoryClasses = classes.filter((c) => c.topicCategory === topic)
-      const categoryInfo = categoryMap[topic] || {
-        title: topic,
-        icon: <BookOpen className="w-6 h-6" />,
-        color: "text-slate-400",
-        bgColor: "bg-slate-500/10",
-      }
-
-      return {
-        id: topic.toLowerCase().replace(/\s+/g, "-"),
-        title: categoryInfo.title,
-        icon: categoryInfo.icon,
-        color: categoryInfo.color,
-        bgColor: categoryInfo.bgColor,
-        courses: categoryClasses.map((c) => ({
-          name: c.title,
-          completedCount: 1,
-        })),
-      }
-    })
-  }
-
-  const trainingCategories = getCategoriesFromClasses()
-
-  const toggleCategory = (id: string) => {
-    setExpandedCategories((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+  const toggleDomain = (domainKey: string) => {
+    setExpandedDomains((prev) =>
+      prev.includes(domainKey) ? prev.filter((d) => d !== domainKey) : [...prev, domainKey]
     )
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
       </div>
-    )
-  }
-
-  if (trainingCategories.length === 0) {
-    return (
-      <Card className="bg-slate-900/50 border-slate-800">
-        <CardContent className="py-12 text-center">
-          <BookOpen className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-400">No training data available yet.</p>
-        </CardContent>
-      </Card>
     )
   }
 
   return (
     <div className="space-y-4">
-      {trainingCategories.map((category) => {
-        const isExpanded = expandedCategories.includes(category.id)
+      {/* Section Overview */}
+      <div className="bg-gradient-to-r from-slate-50 to-blue-50 border border-gray-200 rounded-xl p-5 mb-6">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
+            <FolderTree className="w-6 h-6 text-blue-700" />
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900">Structured Training Portfolio</h4>
+            <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+              Training programmes are organized into four domain knowledge areas, each containing
+              specialized delivery topics. Click on any domain to explore the full curriculum.
+            </p>
+          </div>
+        </div>
+      </div>
 
-        return (
-          <Card
-            key={category.id}
-            className="overflow-hidden transition-all duration-300 border border-slate-800 bg-slate-900/50 hover:border-slate-700 hover:bg-slate-800/50"
-          >
-            {/* Category Header */}
-            <button onClick={() => toggleCategory(category.id)} className="w-full">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-xl bg-slate-950 shadow-sm ${category.color}`}>
-                      {category.icon}
-                    </div>
-                    <div className="text-left">
-                      <h3 className={`font-bold text-lg ${category.color}`}>
-                        {category.title}
-                      </h3>
-                      <p className="text-sm text-slate-500">
-                        {category.courses.length} classes completed
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight
-                    className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${
-                      isExpanded ? "rotate-90" : ""
-                    }`}
-                  />
-                </div>
-              </CardContent>
-            </button>
+      {/* Domain Cards */}
+      <div className="space-y-4">
+        {Object.entries(DOMAIN_STRUCTURE).map(([domainKey, domain]) => (
+          <DomainCard
+            key={domainKey}
+            domainKey={domainKey}
+            domain={domain}
+            classCount={getClassCountForDomain(domainKey)}
+            isExpanded={expandedDomains.includes(domainKey)}
+            onToggle={() => toggleDomain(domainKey)}
+          />
+        ))}
+      </div>
 
-            {/* Expandable Course List */}
-            <div
-              className={`overflow-hidden transition-all duration-300 ${
-                isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
-              }`}
-            >
-              <CardContent className="px-5 pb-5 pt-0">
-                <div className="pl-[3.25rem]">
-                  <div className="flex flex-wrap gap-2">
-                    {category.courses.map((course, idx) => (
-                      <div
-                        key={idx}
-                        className="group/course inline-flex items-center gap-2 px-3 py-2 bg-slate-950 rounded-lg border border-slate-800 hover:border-slate-600 transition-all cursor-default"
-                      >
-                        <span className={category.color}>
-                          <BookOpen className="w-4 h-4" />
-                        </span>
-                        <span className="text-sm font-medium text-slate-300">
-                          {course.name}
-                        </span>
-                        <Badge
-                          variant="secondary"
-                          className="text-[10px] bg-green-500/20 text-green-400 border-green-500/30"
-                        >
-                          Completed
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </div>
-          </Card>
-        )
-      })}
-
-      {/* Expand All / Collapse All */}
-      <div className="flex justify-center pt-4">
+      {/* Expand / Collapse all */}
+      <div className="flex justify-center pt-4 gap-3">
         <button
-          onClick={() =>
-            setExpandedCategories(
-              expandedCategories.length === trainingCategories.length
-                ? []
-                : trainingCategories.map((c) => c.id)
-            )
-          }
-          className="text-sm text-slate-500 hover:text-blue-400 transition-colors"
+          type="button"
+          onClick={() => setExpandedDomains(Object.keys(DOMAIN_STRUCTURE))}
+          className="text-sm text-blue-700 hover:text-blue-800 font-medium transition-colors px-4 py-2 rounded-lg hover:bg-blue-50"
         >
-          {expandedCategories.length === trainingCategories.length
-            ? "Collapse all categories"
-            : "Expand all categories"}
+          Expand all domains
+        </button>
+        <span className="text-gray-300">|</span>
+        <button
+          type="button"
+          onClick={() => setExpandedDomains([])}
+          className="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors px-4 py-2 rounded-lg hover:bg-gray-50"
+        >
+          Collapse all
         </button>
       </div>
     </div>

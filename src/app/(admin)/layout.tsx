@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
-import Link from "next/link"
+import { Sidebar } from "@/components/admin/sidebar"
 import { MobileNav } from "@/components/admin/mobile-nav"
 
 export default async function AdminLayout({
@@ -16,77 +16,41 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation */}
-      <header className="bg-white border-b border-gray-200 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-8">
-              <Link href="/dashboard" className="text-xl font-bold text-gray-900">
-                Sulfri Portal
-              </Link>
-              <nav className="hidden md:flex space-x-4" aria-label="Main navigation">
-                <Link
-                  href="/dashboard"
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  href="/classes"
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Classes
-                </Link>
-                <Link
-                  href="/profile-settings"
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Profile Settings
-                </Link>
-                <Link
-                  href="/downloads"
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Downloads
-                </Link>
-                <Link
-                  href="/admin/badges"
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Badges
-                </Link>
-                <Link
-                  href="/admin/skills"
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Skills
-                </Link>
-              </nav>
+    <div className="min-h-screen bg-slate-950">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block">
+        <Sidebar userEmail={session.user.email} />
+      </div>
+
+      {/* Mobile Header */}
+      <header className="lg:hidden bg-slate-950 border-b border-green-500/20 sticky top-0 z-50">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-[0_0_15px_rgba(34,197,94,0.4)] overflow-hidden">
+              <img 
+                src="/msh-logo.svg" 
+                alt="MSH" 
+                className="w-8 h-8 object-contain"
+              />
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="hidden sm:inline text-sm text-gray-700">{session.user.email}</span>
-              <Link
-                href="/change-password"
-                className="hidden md:inline text-sm text-gray-600 hover:text-gray-900"
-              >
-                Change Password
-              </Link>
-              <Link
-                href="/api/auth/signout"
-                className="text-sm text-red-600 hover:text-red-800"
-              >
-                Logout
-              </Link>
-              <MobileNav />
-            </div>
+            <h1 className="font-bold text-white">
+              MSH<span className="text-green-400">.ADMIN</span>
+            </h1>
           </div>
+          <MobileNav userEmail={session.user.email} />
         </div>
+        {/* Mobile glow line */}
+        <div className="h-px bg-gradient-to-r from-transparent via-green-500/50 to-transparent" />
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
+      <main className="lg:ml-64 min-h-screen">
+        {/* Top decorative line */}
+        <div className="h-px bg-gradient-to-r from-green-500/30 via-green-500/10 to-transparent" />
+        
+        <div className="p-4 lg:p-8">
+          {children}
+        </div>
       </main>
     </div>
   )

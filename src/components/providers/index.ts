@@ -1,0 +1,16 @@
+export {
+  GA4Provider,
+  isGA4Available,
+  trackEvent,
+  trackProposalSubmit,
+  trackPdfDownload,
+  trackWhatsAppClick,
+  trackBadgeView,
+  trackResourceDownload,
+  trackSkillTreeNodeClick,
+  trackContactClick,
+  trackEventRegistration,
+  trackDirectEnquirySubmit,
+  trackPageView,
+  usePageTracking,
+} from "./ga4-provider"

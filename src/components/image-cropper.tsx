@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Slider } from "@/components/ui/slider"
-import { X, Check, RotateCcw } from "lucide-react"
+import { X, Check, RotateCcw, Loader2 } from "lucide-react"
 
 interface ImageCropperProps {
   imageSrc: string
@@ -12,87 +12,40 @@ interface ImageCropperProps {
   onCancel: () => void
 }
 
-// Helper to create cropped image
-async function getCroppedImg(
-  imageSrc: string,
-  crop: { x: number; y: number },
-  zoom: number,
-  rotation: number
-): Promise<Blob> {
-  const image = await createImage(imageSrc)
-  const canvas = document.createElement("canvas")
-  const ctx = canvas.getContext("2d")
-
-  if (!ctx) {
-    throw new Error("No 2d context")
-  }
-
-  // Set canvas size - fixed square size for profile photo
-  const size = 400
-  canvas.width = size
-  canvas.height = size
-
-  // Calculate the source dimensions based on zoom
-  const sourceWidth = image.width / zoom
-  const sourceHeight = image.height / zoom
-  const sourceX = (image.width - sourceWidth) / 2 - (crop.x / zoom)
-  const sourceY = (image.height - sourceHeight) / 2 - (crop.y / zoom)
-
-  // Save context state
-  ctx.save()
-
-  // Move to center of canvas for rotation
-  ctx.translate(size / 2, size / 2)
-  ctx.rotate((rotation * Math.PI) / 180)
-  ctx.translate(-size / 2, -size / 2)
-
-  // Draw the cropped portion of the image
-  ctx.drawImage(
-    image,
-    Math.max(0, sourceX),
-    Math.max(0, sourceY),
-    Math.min(sourceWidth, image.width),
-    Math.min(sourceHeight, image.height),
-    0,
-    0,
-    size,
-    size
-  )
-
-  // Restore context
-  ctx.restore()
-
-  // Convert canvas to blob
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        reject(new Error("Canvas is empty"))
-        return
-      }
-      resolve(blob)
-    }, "image/jpeg", 0.95)
-  })
-}
-
-function createImage(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image()
-    image.crossOrigin = "anonymous"
-    image.onload = () => resolve(image)
-    image.onerror = (error) => reject(error)
-    image.src = url
-  })
-}
+// Portrait aspect ratio (4:5) - matches the profile display
+const PORTRAIT_ASPECT = 4 / 5
+const OUTPUT_WIDTH = 360
+const OUTPUT_HEIGHT = Math.round(OUTPUT_WIDTH / PORTRAIT_ASPECT) // 450
 
 export function ImageCropper({ imageSrc, onCropComplete, onCancel }: ImageCropperProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 })
-  const [zoom, setZoom] = useState(1)
+  const [zoom, setZoom] = useState(0.6)
   const [rotation, setRotation] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 })
+  const [error, setError] = useState<string | null>(null)
+  
   const containerRef = useRef<HTMLDivElement>(null)
+  const imageRef = useRef<HTMLImageElement>(null)
   const dragStartRef = useRef({ x: 0, y: 0 })
   const cropStartRef = useRef({ x: 0, y: 0 })
+
+  // Load image and get dimensions
+  useEffect(() => {
+    const img = new Image()
+    img.onload = () => {
+      setImageSize({ width: img.width, height: img.height })
+      setImageLoaded(true)
+      setError(null)
+    }
+    img.onerror = () => {
+      setError("Failed to load image")
+      console.error("Failed to load image:", imageSrc.substring(0, 100))
+    }
+    img.src = imageSrc
+  }, [imageSrc])
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -142,14 +95,119 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel }: ImageCroppe
     setIsDragging(false)
   }, [])
 
+  const getCroppedImg = async (): Promise<Blob> => {
+    if (!imageRef.current || !containerRef.current) {
+      throw new Error("Image or container not available")
+    }
+
+    const canvas = document.createElement("canvas")
+    const ctx = canvas.getContext("2d")
+    if (!ctx) throw new Error("Canvas context not available")
+
+    // Portrait output dimensions
+    canvas.width = OUTPUT_WIDTH
+    canvas.height = OUTPUT_HEIGHT
+
+    // Fill white background
+    ctx.fillStyle = "#FFFFFF"
+    ctx.fillRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT)
+
+    const img = imageRef.current
+    const container = containerRef.current
+    const containerRect = container.getBoundingClientRect()
+    const containerWidth = containerRect.width
+    const containerHeight = containerRect.height
+
+    // Calculate the crop area (portrait rectangle in center)
+    const cropWidth = containerWidth * 0.75 // 75% of container width
+    const cropHeight = cropWidth / PORTRAIT_ASPECT // maintain aspect ratio
+    const cropX = (containerWidth - cropWidth) / 2
+    const cropY = (containerHeight - cropHeight) / 2
+
+    // Calculate base displayed dimensions (fit to container, no zoom)
+    const imgAspect = img.naturalWidth / img.naturalHeight
+    let baseWidth: number
+    let baseHeight: number
+
+    if (imgAspect >= containerWidth / containerHeight) {
+      // Image is wider relative to container - fit to container height
+      baseHeight = containerHeight
+      baseWidth = baseHeight * imgAspect
+    } else {
+      // Image is taller - fit to container width
+      baseWidth = containerWidth
+      baseHeight = baseWidth / imgAspect
+    }
+
+    // Apply zoom to get actual displayed size
+    const displayedWidth = baseWidth * zoom
+    const displayedHeight = baseHeight * zoom
+
+    // Calculate image position (centered + crop offset)
+    const imgX = (containerWidth - displayedWidth) / 2 + crop.x
+    const imgY = (containerHeight - displayedHeight) / 2 + crop.y
+
+    // Calculate scale factor from displayed size to natural size
+    const scaleToNatural = img.naturalWidth / baseWidth
+
+    // Calculate source coordinates (what part of original image is visible in crop area)
+    const sourceX = Math.max(0, (cropX - imgX) * scaleToNatural / zoom)
+    const sourceY = Math.max(0, (cropY - imgY) * scaleToNatural / zoom)
+    const sourceWidth = Math.min(
+      img.naturalWidth - sourceX, 
+      cropWidth * scaleToNatural / zoom
+    )
+    const sourceHeight = Math.min(
+      img.naturalHeight - sourceY, 
+      cropHeight * scaleToNatural / zoom
+    )
+
+    // Save context for rotation
+    ctx.save()
+
+    // Apply rotation around center
+    if (rotation !== 0) {
+      ctx.translate(OUTPUT_WIDTH / 2, OUTPUT_HEIGHT / 2)
+      ctx.rotate((rotation * Math.PI) / 180)
+      ctx.translate(-OUTPUT_WIDTH / 2, -OUTPUT_HEIGHT / 2)
+    }
+
+    // Draw the cropped portion
+    ctx.drawImage(
+      img,
+      Math.max(0, sourceX),
+      Math.max(0, sourceY),
+      Math.max(1, sourceWidth),
+      Math.max(1, sourceHeight),
+      0,
+      0,
+      OUTPUT_WIDTH,
+      OUTPUT_HEIGHT
+    )
+
+    ctx.restore()
+
+    // Convert to blob
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error("Failed to create blob from canvas"))
+          return
+        }
+        resolve(blob)
+      }, "image/jpeg", 0.95)
+    })
+  }
+
   const handleSave = async () => {
     try {
       setIsProcessing(true)
-      const croppedBlob = await getCroppedImg(imageSrc, crop, zoom, rotation)
+      setError(null)
+      const croppedBlob = await getCroppedImg()
       onCropComplete(croppedBlob)
-    } catch (error) {
-      console.error("Error cropping image:", error)
-      alert("Failed to crop image. Please try again.")
+    } catch (err: any) {
+      console.error("Crop error:", err)
+      setError(err.message || "Failed to crop image. Please try again.")
     } finally {
       setIsProcessing(false)
     }
@@ -157,13 +215,38 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel }: ImageCroppe
 
   const handleReset = () => {
     setCrop({ x: 0, y: 0 })
-    setZoom(1)
+    setZoom(0.6)
     setRotation(0)
+    setError(null)
   }
 
-  // Calculate image transform style
-  const getImageStyle = () => {
+  // Calculate image style for preview
+  const getImageStyle = (): React.CSSProperties => {
+    if (!imageLoaded || !containerRef.current) {
+      return { visibility: "hidden" }
+    }
+
+    const container = containerRef.current
+    const containerWidth = container.offsetWidth
+    const containerHeight = container.offsetHeight
+    const imgAspect = imageSize.width / imageSize.height
+    
+    let baseWidth: number
+    let baseHeight: number
+
+    if (imgAspect >= containerWidth / containerHeight) {
+      // Wider image - fit height
+      baseHeight = containerHeight
+      baseWidth = baseHeight * imgAspect
+    } else {
+      // Taller image - fit width
+      baseWidth = containerWidth
+      baseHeight = baseWidth / imgAspect
+    }
+
     return {
+      width: baseWidth,
+      height: baseHeight,
       transform: `translate(${crop.x}px, ${crop.y}px) scale(${zoom}) rotate(${rotation}deg)`,
       transformOrigin: "center center",
       cursor: isDragging ? "grabbing" : "grab",
@@ -182,10 +265,18 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel }: ImageCroppe
             </Button>
           </div>
 
-          {/* Cropper Container */}
+          {/* Error message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Cropper Container - Portrait aspect ratio */}
           <div 
             ref={containerRef}
-            className="relative w-full aspect-square rounded-xl overflow-hidden bg-slate-900 mb-4 select-none"
+            className="relative w-full overflow-hidden bg-slate-900 mb-4 select-none"
+            style={{ aspectRatio: `${PORTRAIT_ASPECT}` }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -194,30 +285,48 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel }: ImageCroppe
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
+            {/* Loading state */}
+            {!imageLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-white/50" />
+              </div>
+            )}
+
             {/* Image */}
-            <img
-              src={imageSrc}
-              alt="Crop preview"
-              className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-              style={getImageStyle()}
-              draggable={false}
-            />
+            <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+              <img
+                ref={imageRef}
+                src={imageSrc}
+                alt="Crop preview"
+                className="max-w-none max-h-none object-cover"
+                style={getImageStyle()}
+                draggable={false}
+                onLoad={() => setImageLoaded(true)}
+              />
+            </div>
             
-            {/* Circular Mask Overlay */}
+            {/* Portrait Rectangle Mask Overlay */}
             <div 
               className="absolute inset-0 pointer-events-none"
               style={{
-                background: `radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.7) 40%)`,
+                background: `
+                  linear-gradient(to right, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.7) calc((100% - 75% * ${PORTRAIT_ASPECT}) / 2), 
+                  transparent calc((100% - 75% * ${PORTRAIT_ASPECT}) / 2), transparent calc(100% - (100% - 75% * ${PORTRAIT_ASPECT}) / 2),
+                  rgba(0,0,0,0.7) calc(100% - (100% - 75% * ${PORTRAIT_ASPECT}) / 2), rgba(0,0,0,0.7) 100%)
+                `,
               }}
             />
             
-            {/* Circle Border */}
-            <div 
-              className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            >
+            {/* Portrait Rectangle Border */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div 
-                className="w-[80%] h-[80%] rounded-full border-2 border-white/50"
-                style={{ boxShadow: "0 0 0 9999px rgba(0,0,0,0.5)" }}
+                className="border-2 border-white/50 rounded-lg"
+                style={{ 
+                  width: "75%", 
+                  height: `${75 / PORTRAIT_ASPECT}%`,
+                  maxHeight: "90%",
+                  boxShadow: "0 0 0 9999px rgba(0,0,0,0.5)"
+                }}
               />
             </div>
 
@@ -241,6 +350,7 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel }: ImageCroppe
                 min={0.5}
                 max={3}
                 step={0.1}
+                disabled={!imageLoaded}
               />
             </div>
 
@@ -256,6 +366,7 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel }: ImageCroppe
                 min={-180}
                 max={180}
                 step={1}
+                disabled={!imageLoaded}
               />
             </div>
           </div>
@@ -266,7 +377,7 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel }: ImageCroppe
               variant="outline"
               onClick={handleReset}
               className="flex-1"
-              disabled={isProcessing}
+              disabled={isProcessing || !imageLoaded}
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               Reset
@@ -282,10 +393,10 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel }: ImageCroppe
             <Button
               onClick={handleSave}
               className="flex-1 bg-slate-900 hover:bg-slate-800"
-              disabled={isProcessing}
+              disabled={isProcessing || !imageLoaded}
             >
               {isProcessing ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
               ) : (
                 <Check className="w-4 h-4 mr-2" />
               )}

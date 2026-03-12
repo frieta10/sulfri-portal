@@ -1,0 +1,241 @@
+GET
+https://sulfri-portal.vercel.app/
+[HTTP/2 200  15ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/ff41359634659fbe.css
+[HTTP/2 200 OK 0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/f393e911b07a0fa5.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/53d02eea1ad60916.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/269129cbb983c5bd.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/82abf2d65f5428ae.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/07a6367c2bb27bd4.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/ff1a16fafef87110.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/turbopack-adbda26ecd3bfa71.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/ed4ee34bdf9022c7.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/a2dfb6fc5208ab9b.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/1e9f768250e0891c.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/d4cb5ef44761fc34.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/cbe07f2814f3625c.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/1592ce00fcb9f15a.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/7c92e96509cd355e.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/de5bd5f45434f03b.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/msh-logo.svg
+NS_BINDING_ABORTED
+
+GET
+https://sulfri-portal.vercel.app/favicon.ico
+[HTTP/2 404  0ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/showcase-stats
+[HTTP/2 500  1446ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/badges?limit=8
+[HTTP/2 200  697ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/case-studies
+[HTTP/2 500  876ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/experience
+[HTTP/2 200  1500ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/testimonials
+[HTTP/2 500  1423ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/profile
+[HTTP/2 200  1518ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/settings/public
+[HTTP/2 500  608ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/experience?
+[HTTP/2 200  1483ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/experience?
+[HTTP/2 200  315ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/login?_rsc=1r34m
+[HTTP/2 200  555ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/skills?_rsc=1r34m
+[HTTP/2 200  531ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/downloads-public?_rsc=1r34m
+[HTTP/2 200  499ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/badges?_rsc=1r34m
+[HTTP/2 200  597ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/?_rsc=1r34m
+[HTTP/2 200  515ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/downloads-public?_rsc=1pn8p
+[HTTP/2 200  546ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/downloads-public?_rsc=nn07o
+[HTTP/2 200  576ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/login?_rsc=1pn8p
+[HTTP/2 200  1077ms]
+
+GET
+https://images.credly.com/images/f9f3c533-9b5a-47eb-8a3e-5734663116c0/image.png
+[HTTP/1.1 200 OK 0ms]
+
+GET
+https://images.credly.com/images/690784d7-b971-4693-b6ea-7dc990f65544/Adobe_Certified_Professional_Adobe_Photoshop_digital_badge.png
+[HTTP/1.1 200 OK 0ms]
+
+GET
+https://images.credly.com/images/80540f32-05e6-44c9-a397-72c1349eb270/CDSS.png
+[HTTP/1.1 200 OK 0ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/login?_rsc=1tdii
+[HTTP/2 200  533ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/login?_rsc=9gbhl
+[HTTP/2 200  505ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/downloads-public?_rsc=3eb6o
+[HTTP/2 200  524ms]
+
+GET
+https://3yl46cwkskj82w6b.public.blob.vercel-storage.com/profiles/profile-1772997786638.jpg
+[HTTP/2 200  0ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/downloads-public?_rsc=fg3g1
+[HTTP/2 200  536ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/870000b17332dc67.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/8b94e688af5aaec8.js
+[HTTP/2 200  0ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/skills?_rsc=1pn8p
+[HTTP/2 200  541ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/skills?_rsc=t9uho
+[HTTP/2 200  557ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/skills?_rsc=1gnpq
+[HTTP/2 200  516ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/dadb395a4fd539c6.js
+[HTTP/2 200  0ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/badges?_rsc=1pn8p
+[HTTP/2 200  597ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/badges?_rsc=t97ay
+[HTTP/2 200  519ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/badges?_rsc=8xcju
+[HTTP/2 200  621ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/a18a451333befeab.js
+[HTTP/2 200  0ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/?_rsc=1pn8p
+[HTTP/2 200  615ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/?_rsc=ivliq
+[HTTP/2 200  521ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/83e7aff64c072c08.js
+[HTTP/2 200  0ms]
+
+XHRPOST
+https://sulfri-portal.vercel.app/api/analytics/track
+[HTTP/2 500  679ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/profile/download-pdf?type=summary
+[HTTP/2 200  652ms]
+
+The resource at “https://sulfri-portal.vercel.app/_next/static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2” preloaded with link preload was not used within a few seconds. Make sure all attributes of the preload tag are set correctly. sulfri-portal.vercel.app

@@ -25,6 +25,7 @@ import {
   Wand2,
   CheckCircle,
   AlertCircle,
+  Upload,
 } from "lucide-react"
 import Link from "next/link"
 import { extractCredlyEmbedData } from "@/lib/validations/badge"
@@ -73,11 +74,24 @@ export default function BadgesManagementPage() {
   const [extractingEmbed, setExtractingEmbed] = useState(false)
 
   // OB3 import
+  const [ob3InputMethod, setOb3InputMethod] = useState<"image" | "json">("image")
   const [ob3Content, setOb3Content] = useState("")
   const [validatingOB3, setValidatingOB3] = useState(false)
   const [ob3Valid, setOb3Valid] = useState<boolean | null>(null)
   const [ob3BadgeCount, setOb3BadgeCount] = useState(0)
   const [importingOB3, setImportingOB3] = useState(false)
+  const [ob3ImageFile, setOb3ImageFile] = useState<File | null>(null)
+  const [uploadingOB3Image, setUploadingOB3Image] = useState(false)
+  const [ob3ImageDiag, setOb3ImageDiag] = useState<{
+    error?: string
+    details?: string
+    chunks?: { type: string; keyword: string; preview: string; length?: number }[]
+    isPNG?: boolean
+    credentialFound?: boolean
+    textChunksFound?: number
+    credentialPreview?: string
+  } | null>(null)
+  const [checkingOB3Image, setCheckingOB3Image] = useState(false)
 
   // Sync configuration
   const [credlyUserId, setCredlyUserId] = useState("")
@@ -287,10 +301,19 @@ export default function BadgesManagementPage() {
         throw new Error(data.error || "Import failed")
       }
 
-      toast.success(
-        `Import complete! ${data.results.imported} imported, ${data.results.skipped} skipped`
-      )
-      
+      if (data.results.imported > 0) {
+        toast.success(
+          `Import complete! ${data.results.imported} imported, ${data.results.skipped} skipped`
+        )
+      } else if (data.results.skipped > 0) {
+        const reason = data.results.errors?.length
+          ? data.results.errors[0]
+          : "badges may already exist"
+        toast.error(`Nothing imported — ${data.results.skipped} skipped (${reason})`)
+      } else {
+        toast.error("Nothing imported")
+      }
+
       setOb3Content("")
       setOb3Valid(null)
       setOb3BadgeCount(0)
@@ -300,6 +323,84 @@ export default function BadgesManagementPage() {
       toast.error(error.message || "Import failed")
     } finally {
       setImportingOB3(false)
+    }
+  }
+
+  const handleOB3ImageCheck = async () => {
+    if (!ob3ImageFile) {
+      toast.error("Please select an image file")
+      return
+    }
+
+    setCheckingOB3Image(true)
+    setOb3ImageDiag(null)
+    try {
+      const fd = new FormData()
+      fd.append("image", ob3ImageFile)
+
+      const response = await fetch("/api/admin/badges/import-ob3-image", {
+        method: "PUT",
+        body: fd,
+      })
+
+      const data = await response.json()
+      setOb3ImageDiag(data)
+    } catch (error: any) {
+      setOb3ImageDiag({ error: error.message || "Check failed" })
+    } finally {
+      setCheckingOB3Image(false)
+    }
+  }
+
+  const handleOB3ImageImport = async () => {
+    if (!ob3ImageFile) {
+      toast.error("Please select an image file")
+      return
+    }
+
+    setUploadingOB3Image(true)
+    setOb3ImageDiag(null)
+    try {
+      const fd = new FormData()
+      fd.append("image", ob3ImageFile)
+      fd.append("autoCreateSkills", "true")
+
+      const response = await fetch("/api/admin/badges/import-ob3-image", {
+        method: "POST",
+        body: fd,
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        // Store diagnostic info inline so user can see the full details
+        setOb3ImageDiag({ error: data.error, details: data.details, chunks: data.chunks })
+        throw new Error(data.error || "Import failed")
+      }
+
+      if (data.results.imported > 0) {
+        toast.success(
+          `Import complete! ${data.results.imported} imported, ${data.results.skipped} skipped`
+        )
+        setOb3ImageFile(null)
+        fetchBadges()
+        fetchSkills()
+      } else if (data.results.skipped > 0) {
+        const reason = data.results.errors?.length
+          ? data.results.errors[0]
+          : "badge may already exist"
+        toast.error(`Nothing imported — ${data.results.skipped} skipped (${reason})`)
+      } else if (data.results.errors?.length > 0) {
+        // Exception was caught during import — surface the actual error
+        setOb3ImageDiag({ error: "Import error", details: data.results.errors[0] })
+        toast.error(`Import error: ${data.results.errors[0]}`)
+      } else {
+        toast.error("No credential found in this image")
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Import failed")
+    } finally {
+      setUploadingOB3Image(false)
     }
   }
 
@@ -546,13 +647,20 @@ export default function BadgesManagementPage() {
             Manage your Credly badges and certifications
           </p>
         </div>
-        <Button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-slate-900 hover:bg-slate-800"
-        >
-          {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-          {showForm ? "Cancel" : "Add Badge"}
-        </Button>
+        <div className="flex gap-2">
+          <Link href="/badge-mappings">
+            <Button variant="outline">
+              Link to Expertise
+            </Button>
+          </Link>
+          <Button
+            onClick={() => setShowForm(!showForm)}
+            className="bg-slate-900 hover:bg-slate-800"
+          >
+            {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+            {showForm ? "Cancel" : "Add Badge"}
+          </Button>
+        </div>
       </div>
 
       {/* Form */}
@@ -634,20 +742,164 @@ export default function BadgesManagementPage() {
                     Import from Open Badges 3.0
                   </h4>
                   <p className="text-sm text-blue-700">
-                    Export your badges from Credly as Open Badges 3.0 (JSON format) and paste the content here.
-                    This is the recommended method as it doesn&apos;t require OAuth setup.
+                    Import your Credly badges using a downloaded badge PNG image (recommended) or exported OB3 JSON.
+                    No OAuth setup required.
                   </p>
                 </div>
 
-                <div>
-                  <Label>Paste OB3 JSON Content</Label>
-                  <Textarea
-                    value={ob3Content}
-                    onChange={(e) => {
-                      setOb3Content(e.target.value)
-                      setOb3Valid(null)
-                    }}
-                    placeholder={`{
+                {/* Sub-tab selector */}
+                <div className="flex gap-2 border-b border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setOb3InputMethod("image")}
+                    className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors ${
+                      ob3InputMethod === "image"
+                        ? "bg-slate-900 text-white"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    }`}
+                  >
+                    <Upload className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+                    Upload Image
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOb3InputMethod("json")}
+                    className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors ${
+                      ob3InputMethod === "json"
+                        ? "bg-slate-900 text-white"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    }`}
+                  >
+                    Paste JSON
+                  </button>
+                </div>
+
+                {/* Image upload mode */}
+                {ob3InputMethod === "image" && (
+                  <div className="space-y-4 pt-2">
+                    <div>
+                      <Label>Badge PNG Image</Label>
+                      <Input
+                        type="file"
+                        accept=".png,image/png"
+                        className="mt-1"
+                        onChange={(e) => {
+                          setOb3ImageFile(e.target.files?.[0] ?? null)
+                          setOb3ImageDiag(null)
+                        }}
+                      />
+                      {ob3ImageFile && (
+                        <p className="text-xs text-slate-500 mt-1">Selected: {ob3ImageFile.name}</p>
+                      )}
+                      <p className="text-xs text-slate-500 mt-1">
+                        Upload a Credly badge PNG downloaded with the &quot;Open Badges&quot; option —
+                        the credential is embedded inside the image.
+                      </p>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleOB3ImageCheck}
+                        disabled={checkingOB3Image || !ob3ImageFile}
+                      >
+                        {checkingOB3Image ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                        )}
+                        Check Image
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleOB3ImageImport}
+                        disabled={uploadingOB3Image || !ob3ImageFile}
+                        className="bg-amber-500 hover:bg-amber-600 text-slate-900"
+                      >
+                        {uploadingOB3Image ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        ) : (
+                          <Upload className="w-4 h-4 mr-2" />
+                        )}
+                        Import from Image
+                      </Button>
+                    </div>
+
+                    {/* Inline diagnostic panel */}
+                    {ob3ImageDiag && (
+                      <div className={`p-3 rounded-lg text-sm border ${
+                        ob3ImageDiag.credentialFound
+                          ? "bg-green-50 border-green-200 text-green-800"
+                          : "bg-red-50 border-red-200 text-red-800"
+                      }`}>
+                        {ob3ImageDiag.credentialFound ? (
+                          <div className="flex items-center gap-2 font-medium">
+                            <CheckCircle className="w-4 h-4" />
+                            Credential found! Ready to import.
+                            {ob3ImageDiag.credentialPreview && (
+                              <span className="font-mono text-xs font-normal ml-2 truncate max-w-xs">{ob3ImageDiag.credentialPreview}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="flex items-start gap-2 font-medium">
+                              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                              <span>{ob3ImageDiag.error || "No credential found"}</span>
+                            </div>
+                            {ob3ImageDiag.details && (
+                              <p className="text-xs ml-6">{ob3ImageDiag.details}</p>
+                            )}
+                            {ob3ImageDiag.isPNG === false && (
+                              <p className="text-xs ml-6">File does not appear to be a valid PNG.</p>
+                            )}
+                            {ob3ImageDiag.isPNG === true && ob3ImageDiag.textChunksFound === 0 && (
+                              <p className="text-xs ml-6">
+                                This PNG has no text metadata — it is likely a plain image download, not an Open Badges baked PNG.
+                                On Credly, use <strong>Download → Open Badges</strong> (not &quot;Download PNG&quot;).
+                              </p>
+                            )}
+                            {ob3ImageDiag.chunks && ob3ImageDiag.chunks.length > 0 && (
+                              <div className="ml-6 mt-2">
+                                <p className="text-xs font-medium mb-1">Text chunks found:</p>
+                                {ob3ImageDiag.chunks.map((c, i) => (
+                                  <div key={i} className="text-xs font-mono bg-white bg-opacity-60 rounded p-1 mb-1 break-all">
+                                    <span className="font-bold">{c.type}[{c.keyword}]</span>
+                                    {c.length != null && <span className="text-slate-500"> ({c.length} chars)</span>}:{" "}
+                                    {c.preview}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="text-sm text-slate-500">
+                      <p className="font-medium">How to download the badge image from Credly:</p>
+                      <ol className="list-decimal list-inside mt-2 space-y-1">
+                        <li>Go to your Credly profile</li>
+                        <li>Click on a badge to open it</li>
+                        <li>Click &quot;Download&quot; and choose &quot;Open Badges&quot; (PNG with embedded credential)</li>
+                        <li>Upload that PNG file here</li>
+                      </ol>
+                    </div>
+                  </div>
+                )}
+
+                {/* JSON paste mode */}
+                {ob3InputMethod === "json" && (
+                  <div className="space-y-4 pt-2">
+                    <div>
+                      <Label>Paste OB3 JSON Content</Label>
+                      <Textarea
+                        value={ob3Content}
+                        onChange={(e) => {
+                          setOb3Content(e.target.value)
+                          setOb3Valid(null)
+                        }}
+                        placeholder={`{
   "@context": ["https://www.w3.org/2018/credentials/v1"],
   "type": ["VerifiableCredential"],
   "issuer": { "name": "Credly" },
@@ -658,68 +910,70 @@ export default function BadgesManagementPage() {
     }
   }
 }`}
-                    rows={8}
-                  />
-                  <p className="text-xs text-slate-500 mt-1">
-                    Paste the complete JSON content from your OB3 export file
-                  </p>
-                </div>
+                        rows={8}
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Paste the complete JSON content from your OB3 export file
+                      </p>
+                    </div>
 
-                {ob3Valid !== null && (
-                  <div className={`p-3 rounded-lg ${ob3Valid ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-                    {ob3Valid ? (
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="w-5 h-5" />
-                        <span>Valid OB3 format! Found {ob3BadgeCount} badge(s)</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <AlertCircle className="w-5 h-5" />
-                        <span>Invalid OB3 format. Please check your JSON.</span>
+                    {ob3Valid !== null && (
+                      <div className={`p-3 rounded-lg ${ob3Valid ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}>
+                        {ob3Valid ? (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="w-5 h-5" />
+                            <span>Valid OB3 format! Found {ob3BadgeCount} badge(s)</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <AlertCircle className="w-5 h-5" />
+                            <span>Invalid OB3 format. Please check your JSON.</span>
+                          </div>
+                        )}
                       </div>
                     )}
+
+                    <div className="flex gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleOB3Validation}
+                        disabled={validatingOB3 || !ob3Content.trim()}
+                      >
+                        {validatingOB3 ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                        )}
+                        Validate
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleOB3Import}
+                        disabled={importingOB3 || !ob3Valid || ob3BadgeCount === 0}
+                        className="bg-amber-500 hover:bg-amber-600 text-slate-900"
+                      >
+                        {importingOB3 ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        ) : (
+                          <Award className="w-4 h-4 mr-2" />
+                        )}
+                        Import Badges
+                      </Button>
+                    </div>
+
+                    <div className="text-sm text-slate-500">
+                      <p className="font-medium">How to export from Credly:</p>
+                      <ol className="list-decimal list-inside mt-2 space-y-1">
+                        <li>Go to your Credly profile</li>
+                        <li>Click on a badge</li>
+                        <li>Look for &quot;Download&quot; or &quot;Export&quot; option</li>
+                        <li>Select &quot;Open Badges 3.0&quot; format</li>
+                        <li>Copy the JSON content and paste above</li>
+                      </ol>
+                    </div>
                   </div>
                 )}
-
-                <div className="flex gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleOB3Validation}
-                    disabled={validatingOB3 || !ob3Content.trim()}
-                  >
-                    {validatingOB3 ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ) : (
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                    )}
-                    Validate
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleOB3Import}
-                    disabled={importingOB3 || !ob3Valid}
-                    className="bg-amber-500 hover:bg-amber-600 text-slate-900"
-                  >
-                    {importingOB3 ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ) : (
-                      <Award className="w-4 h-4 mr-2" />
-                    )}
-                    Import Badges
-                  </Button>
-                </div>
-
-                <div className="text-sm text-slate-500">
-                  <p className="font-medium">How to export from Credly:</p>
-                  <ol className="list-decimal list-inside mt-2 space-y-1">
-                    <li>Go to your Credly profile</li>
-                    <li>Click on a badge</li>
-                    <li>Look for &quot;Download&quot; or &quot;Export&quot; option</li>
-                    <li>Select &quot;Open Badges 3.0&quot; format</li>
-                    <li>Copy the JSON content and paste above</li>
-                  </ol>
-                </div>
               </div>
             )}
 
@@ -858,6 +1112,7 @@ export default function BadgesManagementPage() {
                   <Label htmlFor="visibility">Visibility</Label>
                   <select
                     id="visibility"
+                    title="Visibility"
                     value={formData.visibility}
                     onChange={(e) => setFormData({ ...formData, visibility: e.target.value as "PUBLIC" | "HIDDEN" })}
                     className="w-full h-10 px-3 rounded-md border border-slate-200 bg-white"
@@ -870,6 +1125,7 @@ export default function BadgesManagementPage() {
                   <input
                     type="checkbox"
                     id="featured"
+                    title="Featured"
                     checked={formData.featured}
                     onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
                     className="w-4 h-4"

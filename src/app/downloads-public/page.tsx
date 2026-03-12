@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { HeadMeta } from "@/components/seo/head-meta"
+import { StickyCtaBar, useStickyCtaSettings } from "@/components/mobile/sticky-cta-bar"
 import Link from "next/link"
 import { FileText, Download, ArrowLeft } from "lucide-react"
 
@@ -11,7 +13,8 @@ type DownloadItem = {
   updatedAt: string
 }
 
-export default function PublicDownloadsPage() {
+function PublicDownloadsPageContent() {
+  const { settings: ctaSettings, loading: ctaLoading } = useStickyCtaSettings()
   const [downloads, setDownloads] = useState<DownloadItem[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -113,6 +116,15 @@ export default function PublicDownloadsPage() {
         )}
       </main>
 
+      {/* Sticky Mobile CTA */}
+      {!ctaLoading && (
+        <StickyCtaBar
+          whatsappNumber={ctaSettings.whatsappNumber}
+          whatsappPrefillMessage={ctaSettings.whatsappPrefillMessage}
+          enabled={ctaSettings.enabled}
+        />
+      )}
+
       {/* Footer */}
       <footer className="border-t bg-white mt-12">
         <div className="max-w-4xl mx-auto px-4 py-6 text-center text-sm text-gray-500">
@@ -120,5 +132,18 @@ export default function PublicDownloadsPage() {
         </div>
       </footer>
     </div>
+  )
+}
+
+export default function PublicDownloadsPage() {
+  return (
+    <>
+      <HeadMeta
+        title="Resources & Downloads"
+        description="Download training materials, course outlines, and professional resources. Documents and guides for corporate training programs."
+        canonical="/downloads-public"
+      />
+      <PublicDownloadsPageContent />
+    </>
   )
 }

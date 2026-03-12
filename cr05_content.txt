@@ -1,0 +1,781 @@
+CHANGE REQUEST
+ 
+CR-05
+ Skills Wallet, Interactive Skill Tree
+& Gamification Module
+ 
+ Base SRS: Sulfri Trainer Portal — Personal Brand Edition v1.0
+ Amendment extends: CR-01 (Badge Wallet) + CR-02 (Skill Tree) + CR-03 (Event Lead
+ Capture) + CR-04 (Showcase & Automation)
+ 
+CR ID
+CR-05
+Type
+Functional Enhancement — Credential Visualisation, Skill Intelligence &
+Engagement
+Priority
+High
+Target Version
+v1.5 (Post-Approval Consolidation)
+Base SRS
+Sulfri Trainer Portal — Personal Brand Edition v1.0
+Extends
+CR-01 (Badge Wallet) + CR-02 (Skill Tree foundation) + CR-03 + CR-04
+Implementation
+src/app/skills/page.tsx — production-ready component delivered
+Prepared By
+System Specification Draft
+Status
+Pending Approval — Implementation Code Available
+ Module A
+ 
+Skills Wallet (Verified
+Credentials Grid)
+ Module B
+ 
+Interactive Radial Skill Tree
+ (SVG)
+ Module C
+ 
+Gamification Engine (XP,
+Levels, Achievements)
+
+---PAGE BREAK---
+TABLE OF CONTENTS
+1.   Executive Summary
+2.   Current State Analysis
+     2.1 What Exists (test/agent-kit branch + live deployment)
+     2.2 What Is Missing
+     2.3 Gap Summary
+3.   Alignment with Existing SRS & CRs
+4.   Scope of Change
+     3.1 In Scope
+     3.2 Out of Scope (Future Phase)
+5.   Module A — Skills Wallet (Verified Credentials Grid)
+     5.1 Functional Requirements (FR-179 – FR-193)
+6.   Module B — Interactive Radial Skill Tree
+     6.1 Tree Architecture & Domain Mapping
+     6.2 Functional Requirements (FR-194 – FR-211)
+7.   Module C — Gamification Engine
+     7.1 XP & Level System
+     7.2 Achievement System
+     7.3 Functional Requirements (FR-212 – FR-224)
+8.   Implementation Reference
+     8.1 Domain-to-Topic Mapping Table
+     8.2 Level Progression Table
+     8.3 Achievement Definitions
+     8.4 File Placement
+9.   Database Amendments
+10.   API Amendments
+11.   Non-Functional Requirements
+12.   Acceptance Criteria
+13.   Impact on Deployment
+14.   Version Control & CR Log
+15.   Strategic Value Statement
+
+---PAGE BREAK---
+1. EXECUTIVE SUMMARY
+This Change Request formalises and specifies the complete Skills Wallet, Interactive Radial Skill Tree, and
+Gamification Engine for the Sulfri Trainer Portal. While CR-02 introduced the concept of a skill tree and
+expertise linking, it did not specify the visual interaction model, gamification mechanics, or the precise mapping
+between the existing training class database and the skill/expertise structure.
+CR-05 closes this gap by delivering: (1) a production-ready implementation reference for the Skills Wallet with
+Credly-verified badge integration; (2) a fully interactive radial SVG skill tree built without external graphing
+dependencies, derived dynamically from the live training class and badge database; and (3) a gamification layer
+— XP points, 5-level progression, and an achievement system — that rewards and communicates Sulfri's
+accumulated expertise in an engaging, verifiable format.
+Module A
+Skills Wallet
+Tabbed credential showcase: Credly badge grid with verification links, domain filter chips, skill
+area cards with badge thumbnails and training class counts.
+Module B
+Interactive Radial Skill Tree
+Pan-and-zoom SVG radial tree: Root (trainer) → Domain → Topic nodes, derived from live class
+database. Click-to-inspect panel shows supporting badges and training history per node.
+Module C
+Gamification Engine
+XP = (badges × 100) + (classes × 10). Five levels: Trainee through Master Trainer. Five
+unlockable achievements. Live XP progress bar with gradient glow. All computed client-side from
+existing API data.
+
+---PAGE BREAK---
+2. CURRENT STATE ANALYSIS
+2.1 What Exists (test/agent-kit branch + live deployment at sulfri-portal.vercel.app)
+ Badge model (Prisma): id, title, slug, issuer, credlyBadgeId, iframeWidth, iframeHeight, fallbackImageUrl,
+verificationUrl, featured, visibility, displayOrder.
+ Skill model (Prisma): id, name, slug, description, visibility, displayOrder.
+ BadgeSkill junction table: composite PK (badgeId, skillId).
+ CredlyOAuthToken model: stores OB3 access/refresh tokens for Credly auto-sync.
+ 3 badges imported via Credly OB3: OPSWAT ICIP, Adobe Certified Professional, iTrain Asia CDSS.
+ 1 skill ('Ai') linked to 1 badge (iTrain Asia CDSS).
+ GET /api/skills — returns skills with badge counts and badge summaries.
+ GET /api/badges — returns badge records with Credly embed data.
+ GET /api/expertise/tree — endpoint exists, returns empty array [] (no nodes seeded).
+ GET /api/experience — returns 46 training classes across 21 distinct topic categories.
+ /skills page (test/agent-kit branch): basic grid layout, search, sort, pagination — no tree, no gamification.
+ Live site renders /skills and /badges pages from deployed test/agent-kit build.
+2.2 What Is Missing
+ No visual skill tree — /expertise/tree returns empty, no tree rendering component exists.
+ No domain-to-topic mapping layer connecting the 21 topic categories to 5 logical domains.
+ No gamification layer — no XP calculation, no levels, no achievements.
+ No panel interaction on skill nodes — clicking a skill does not show related training classes or badges.
+ No pan/zoom controls on any tree view.
+ Skills wallet does not show domain summary cards or domain-filtered class counts.
+ Badges grid does not surface Credly verification links inline.
+ No tabbed interface unifying the Skills Wallet and Skill Tree views.
+ ExpertiseNode Prisma model (specified in CR-02) not yet implemented in either branch.
+2.3 Gap Summary
+Component
+CR-02 Specified
+Current State
+CR-05 Resolution
+Skill Tree
+Specified
+(FR-53–FR-57)
+Empty endpoint, no UI
+Full radial SVG tree delivered
+Domain Mapping
+Implied
+Not implemented
+21 topics → 5 domains, hardcoded mapping
+Tree Interaction
+Slide panel (FR-56)
+None
+Click node → detail panel with classes +
+badges
+Pan / Zoom
+FR-53 zoom/pan
+None
+Mouse drag + scroll zoom + reset button
+Gamification
+Not in any prior CR
+None
+XP formula, 5 levels, 5 achievements
+Skills Wallet
+Partially in CR-01
+Basic grid only
+Domain chips, badge grid, skill cards, search
+
+---PAGE BREAK---
+Component
+CR-02 Specified
+Current State
+CR-05 Resolution
+ExpertiseNode DB
+Specified in CR-02
+Not implemented
+Deferred — tree built from classes API instead
+
+---PAGE BREAK---
+3. ALIGNMENT WITH EXISTING SRS & CRs
+CR-05 is fully aligned with the architectural and content-management philosophy established in SRS v1.0 and
+extended across CR-01 through CR-04. All new functionality is delivered as a single Next.js page component
+consuming existing API routes. No changes to authentication, user roles, deployment model, or existing
+database tables are required.
+DOES NOT introduce new user roles
+✓
+DOES NOT change authentication model (JWT/NextAuth)
+✓
+DOES NOT alter deployment architecture (Vercel)
+✓
+DOES NOT modify existing Prisma schema (uses existing Badge, Skill, Class models)
+✓
+EXTENDS /skills page with tree, gamification, and domain intelligence
+✓
+CONSUMES only existing public API endpoints (/api/skills, /api/badges, /api/experience)
+✓
+DELIVERS production-ready implementation code (skills-page.tsx) alongside this CR
+✓
+DEFERS ExpertiseNode DB implementation (CR-02) — tree built from live class data instead
+✓
+
+---PAGE BREAK---
+4. SCOPE OF CHANGE
+4.1 In Scope
+ Tabbed /skills page: Skills Wallet tab and Skill Tree tab in a single unified page.
+ Skills Wallet: domain summary chips (5 domains, colour-coded), verified badge grid with Credly verification
+links, skill area cards with badge thumbnails and training class counts.
+ Radial SVG skill tree: Root → Domain → Topic node hierarchy derived from /api/experience topic categories.
+ Domain-to-topic mapping layer: 21 topic categories mapped to 5 logical domains (Management & Leadership,
+Technology & Engineering, Cybersecurity, Data & AI, Productivity & Collaboration).
+ Click-to-inspect node panel: shows node description, class count, badge count, supporting badge thumbnails,
+list of training classes delivered under that topic.
+ Pan-and-zoom controls: mouse drag to pan, scroll wheel to zoom, +/− buttons, reset to default view.
+ Gamification XP engine: XP = (badge count × 100) + (class count × 10), computed client-side.
+ Level progression system: 5 levels (Trainee, Practitioner, Specialist, Expert, Master Trainer) with animated
+XP progress bar.
+ Achievement system: 5 achievements (First Badge, Triple Threat, Decade Trainer, Multi-Domain, Expert
+Level) with locked/unlocked visual state.
+ Hero header: stat chips (badges, skills, classes, domains), achievement display, level indicator.
+ Responsive design: adapts to mobile, tablet, and desktop. Tree view accessible on all screen sizes.
+ No new npm dependencies: tree implemented in pure React + SVG. No D3, no external graph libraries.
+4.2 Out of Scope (Future Phase)
+ ExpertiseNode database model and /api/admin/expertise-nodes CRUD (specified in CR-02, deferred).
+ Admin-controlled tree node management (add/edit/move nodes via backoffice).
+ Animated edge transitions (currently static SVG lines).
+ Mobile touch gesture support (pinch-to-zoom on touchscreen).
+ Public shareable skill card per individual skill (individual /skills/{slug} page redesign).
+ Gamification persistence across sessions (XP is computed live, not stored in DB).
+ Leaderboard or comparative gamification (single-user portal only).
+
+---PAGE BREAK---
+5. MODULE A — SKILLS WALLET (VERIFIED CREDENTIALS GRID)
+The Skills Wallet is the primary credential showcase tab. It presents all Credly-verified badges, domain
+summary statistics, and skill areas in a structured, searchable grid. It serves as the client-facing proof of Sulfri's
+verified competencies.
+5.1 Functional Requirements
+FR ID
+Requirement
+FR-179
+The /skills page must display two tabs: 'Skills Wallet' (default) and 'Skill Tree'. The active tab must be
+visually distinguished with an amber highlight.
+FR-180
+The Skills Wallet tab must display a domain summary row showing up to 5 domain chips. Each chip
+must show: domain icon, domain name, and class count for that domain. Chips must be clickable to
+filter the skill view by domain.
+FR-181
+Domain chips must use the following colour coding: Management & Leadership (#f59e0b), Technology
+& Engineering (#3b82f6), Cybersecurity (#ef4444), Data & AI (#8b5cf6), Productivity & Collaboration
+(#10b981).
+FR-182
+The Skills Wallet must display a Verified Badges section showing all PUBLIC badges retrieved from
+GET /api/badges. Each badge card must show: badge image (fallbackImageUrl), title, issuer name,
+and issue date.
+FR-183
+Each badge card must include an inline 'Verify ■' link that opens the Credly badge page
+(https://www.credly.com/badges/{credlyBadgeId}) in a new tab. The link must only appear on hover to
+avoid visual clutter.
+FR-184
+If a badge has no fallbackImageUrl, a placeholder icon must be shown.
+FR-185
+The Skills Wallet must display a Skill Areas section showing all PUBLIC skills from GET
+/api/skills?withBadges=true. Each skill card must show: skill name, description (if present), badge
+count, matching class count, and badge thumbnail images.
+FR-186
+Each skill card must include a 'View training classes →' link that navigates to the homepage with a
+pre-applied topic filter: /?topic={skillName}.
+FR-187
+Skill cards must display a domain icon and domain colour derived from the domain mapping table
+(Section 8.1).
+FR-188
+A search input must filter the Skill Areas section in real time by skill name.
+FR-189
+The Skills Wallet must degrade gracefully if no badges or skills exist: the respective sections must
+show a friendly empty state message, not an error.
+FR-190
+All badge images must use lazy loading (loading='lazy' attribute) to improve page performance.
+FR-191
+Badge cards must animate on hover: border colour transitions to amber, slight elevation shadow.
+FR-192
+Domain filter selection must be visually reflected: selected domain chip must show a stronger border,
+background, and glow. Clicking the same chip again deselects it (toggle).
+FR-193
+The Skills Wallet must be fully responsive: single column on mobile, 2-column grid on tablet, 3-column
+grid on desktop.
+
+---PAGE BREAK---
+6. MODULE B — INTERACTIVE RADIAL SKILL TREE
+The Interactive Radial Skill Tree is a pure React/SVG visualisation of Sulfri's complete training expertise,
+derived dynamically from the live class database. It provides an engaging, explorable map of domains, topics,
+and credentials — structured as a radial tree with the trainer at the centre.
+6.1 Tree Architecture & Domain Mapping
+The tree has 3 levels: Root (trainer) → Domain (5 nodes) → Topic (21 nodes). Topic nodes are derived from the
+distinct topicCategory values in the classes table. The domain mapping is a client-side constant as defined in
+the implementation reference (Section 8.1). No database changes are required for this approach.
+Level
+Node Type
+Source
+Count
+Colour
+0 (Centre)
+Root
+Static — trainer name
+1
+Amber #f59e0b
+1
+Domain
+Derived from domain mapping constant
+5
+Per domain colour
+2
+Topic
+Distinct topicCategory from /api/experience
+21
+Inherits domain colour
+6.2 Functional Requirements
+FR ID
+Requirement
+FR-194
+The Skill Tree tab must render a radial SVG tree using a computed radial layout algorithm. The tree
+must be centred in the available viewport with responsive sizing via ResizeObserver.
+FR-195
+The tree must use a 3-level radial layout: Level 0 (root) at centre (radius 0), Level 1 (domain nodes) at
+radius 140px, Level 2 (topic nodes) at radius 280px. Radii are scaled by the zoom factor.
+FR-196
+Node sizes must differ by type: Root = 38px radius, Domain = 26px radius, Topic = 18px radius.
+FR-197
+Each node must display: filled circle (colour = domain colour, transparency when unselected),
+domain-coloured border, node label below, class count number inside the circle.
+FR-198
+The root node must display a star emoji (■) at its centre and a radial glow effect using an SVG
+radialGradient.
+FR-199
+Nodes that have one or more supporting badges must display a small amber dot indicator at the
+top-right of the node circle.
+FR-200
+Edges (lines connecting parent to child nodes) must be drawn in the child node's domain colour, with
+25% opacity by default. Edges connected to a selected node must increase to 80% opacity and 2px
+stroke width.
+FR-201
+Topic-level edges must use a dashed stroke pattern (strokeDasharray='4 4') to visually distinguish
+them from domain-level edges.
+FR-202
+Clicking a node must open a detail panel. Clicking the same node again or pressing the × button must
+close the panel. Only one node may be selected at a time.
+FR-203
+The detail panel must display: node type label, node name, description, class count stat card, badge
+count stat card (if > 0), list of supporting badge thumbnails with issuer names, and a scrollable list of
+training classes delivered under that topic (title, client, date, mode).
+
+---PAGE BREAK---
+FR ID
+Requirement
+FR-204
+The detail panel class list must be limited to 10 visible entries with a '+N more' indicator if the actual
+count exceeds 10.
+FR-205
+Mouse drag on the SVG canvas must pan the tree (translate transform). The cursor must change to
+'grabbing' during a drag operation.
+FR-206
+Scroll wheel on the SVG canvas must zoom the tree (scale transform). Zoom range must be
+constrained between 0.4x (minimum) and 2.0x (maximum).
+FR-207
+Three control buttons must be visible in the top-left corner of the tree canvas: Zoom In (+), Zoom Out
+(-), Reset View (■). Reset View must restore zoom to 1.0 and pan offset to (0, 0).
+FR-208
+A domain legend must be visible in the bottom-left corner of the tree canvas showing each domain
+name with its colour dot and icon.
+FR-209
+When no node is selected, the right panel must show: a 'Click any node to explore' prompt, drag/zoom
+help text, and a domain quick-stats list showing class count per domain.
+FR-210
+The tree must use an SVG filter (feGaussianBlur glow) applied to selected and hovered nodes to
+create a visual glow effect.
+FR-211
+The tree must degrade gracefully if no classes are returned from /api/experience: an empty state
+message must be shown. The root node and header section must still render.
+
+---PAGE BREAK---
+7. MODULE C — GAMIFICATION ENGINE
+The Gamification Engine transforms the Skills Wallet from a static credential list into a dynamic, progress-driven
+experience. Visitors instantly understand the depth and breadth of Sulfri's expertise through a familiar
+level-and-achievement system that communicates authority without requiring them to read every credential
+individually.
+7.1 XP & Level System
+XP (Experience Points) is calculated entirely client-side from data returned by existing API endpoints. No XP
+data is stored in the database.
+XP Formula: XP = (Number of Badges × 100) + (Number of Classes × 10)
+Level
+Title
+Minimum
+XP
+Colour
+Unlock Condition (current data)
+1
+Trainee
+0 XP
+#6b7280 (Grey)
+Default starting level
+2
+Practitioner
+200 XP
+#10b981 (Green)
+~2 badges OR 20 classes
+3
+Specialist
+500 XP
+#3b82f6 (Blue)
+~5 badges OR 50 classes
+4
+Expert
+1,000 XP
+#8b5cf6 (Purple)
+~10 badges OR 100 classes
+5
+Master Trainer
+2,000 XP
+#f59e0b (Amber)
+~20 badges OR 200 classes
+7.2 Achievement System
+ID
+Ico
+n
+Label
+Description
+Unlock Condition
+first_badge
+■
+First Badge
+Earned your first credential
+badges >= 1
+triple
+■■
+Triple Threat
+Earned 3 or more badges
+badges >= 3
+decade
+■
+Decade Trainer
+Delivered 10 or more classes
+classes >= 10
+multi_domai
+n
+■
+Multi-Domain
+Active in 3 or more domains
+active domains >= 3
+expert_level
+■
+Expert Level
+Delivered 50 or more classes
+classes >= 50
+7.3 Functional Requirements
+FR ID
+Requirement
+FR-212
+The hero header of the /skills page must display the current XP total, current level title, and level
+number. These values must be computed client-side from live API data on every page load.
+FR-213
+An XP progress bar must be displayed below the level label. The bar must fill proportionally between
+the current level's minimum XP and the next level's minimum XP.
+
+---PAGE BREAK---
+FR ID
+Requirement
+FR-214
+The XP progress bar must use a gradient fill: left colour = current level colour, right colour = next level
+colour. The bar must include a CSS glow (box-shadow) in the current level colour at 50% opacity.
+FR-215
+When the user has reached the maximum level (Master Trainer), the progress bar must show 100%
+fill. The next level label must not be shown.
+FR-216
+Below the progress bar, the system must display how many XP remain until the next level, in the
+format: '{N} XP to {NextLevelTitle}'.
+FR-217
+The hero header must display all 5 achievement icons in a row. Unlocked achievements must be
+displayed with full opacity, amber border, and amber glow. Locked achievements must be displayed at
+30% opacity with a greyscale filter.
+FR-218
+Each achievement icon must include a tooltip (HTML title attribute) showing: achievement label and
+description text.
+FR-219
+Achievement unlock status must be computed client-side from: badge count (from /api/badges), class
+count (from /api/experience), and active domain count (derived from class topicCategory values).
+FR-220
+The hero header must display 4 stat chips: Badges (from /api/badges count), Skills (from /api/skills
+count), Classes (from /api/experience total), Domains (computed active domain count). Each chip
+must be colour-coded to its domain.
+FR-221
+Stat chips must use colour-coded borders and backgrounds: Badges = amber, Skills = purple, Classes
+= blue, Domains = green.
+FR-222
+The current level title must be displayed in the level's designated colour (see Level Progression
+Table). It must not use a fixed colour.
+FR-223
+All gamification values (XP, level, achievements, stat chips) must update automatically when the
+underlying API data changes — no manual refresh required.
+FR-224
+Gamification data must NOT be stored in the database. All computation must be client-side. This
+decision may be revisited in a future CR if persistence across sessions is required.
+
+---PAGE BREAK---
+8. IMPLEMENTATION REFERENCE
+8.1 Domain-to-Topic Mapping Table
+The following mapping is implemented as a client-side constant (DOMAIN_MAP) in the page component. It
+translates raw topicCategory strings from the classes database into 5 logical domains. This mapping must be
+kept in sync with any new topic categories added to the classes table.
+Domain
+Ico
+n
+Colour
+Topic Categories Mapped
+Management &
+Leadership
+■
+#f59e0b
+leadership, Management, Agile / Scrum, Project Management, Process
+Improvement, Career Development, Professional Skills
+Technology &
+Engineering
+■■
+#3b82f6
+Programming, Cloud Computing, Emerging Technology, Digital
+Transformation, Automation / RPA
+Cybersecurity
+■
+#ef4444
+Cybersecurity
+Data & AI
+■
+#8b5cf6
+Data Analytics & Visualization, Data Analytics & AI, Data Management, AI /
+Automation, AI / Prompt Engineering, AI Fundamentals
+Productivity &
+Collaboration
+■
+#10b981
+Microsoft Office Productivity, Productivity / Collaboration
+8.2 File Placement
+File
+Action
+Notes
+src/app/skills/page.tsx
+Replace / create
+Main implementation — delivered as skills-page.tsx
+prisma/schema.prisma
+No change required
+Uses existing Badge, Skill, BadgeSkill, Class models
+src/app/api/skills/route.ts
+No change required
+Existing endpoint consumed as-is
+src/app/api/badges/route.ts
+No change required
+Existing endpoint consumed as-is
+src/app/api/experience/route.ts
+No change required
+Existing endpoint consumed as-is
+package.json
+No change required
+No new dependencies — pure React + SVG
+
+---PAGE BREAK---
+9. DATABASE AMENDMENTS
+CR-05 requires NO database schema changes. All three modules consume data exclusively from existing tables
+defined in SRS v1.0, CR-01, and the test/agent-kit branch deployment.
+Table
+Status
+Used By
+badges
+Existing (CR-01)
+Module A — Badge grid, Module B — Node badge indicators
+skills
+Existing (CR-01)
+Module A — Skill area cards
+badge_skills
+Existing (CR-01)
+Module A — Badge-to-skill association
+classes
+Existing (SRS v1.0)
+Module B — Topic node generation, Module C — XP + achievement
+calculation
+profile_settings
+Existing (SRS v1.0)
+Hero header — trainer name (root node label)
+expertise_nodes
+Not yet created
+(CR-02)
+Not used in CR-05 — tree built from classes instead
+Note: If ExpertiseNode-based tree management (CR-02) is implemented in a future sprint, the DOMAIN_MAP
+constant in skills/page.tsx must be replaced with a call to GET /api/expertise/tree. The tree rendering logic
+(computeRadialLayout, flattenTree, getEdges) is already structured to accept any TreeNode hierarchy and will
+not require changes to accommodate this migration.
+
+---PAGE BREAK---
+10. API AMENDMENTS
+CR-05 requires NO new API endpoints. All data is sourced from existing endpoints. The table below documents
+the exact calls made by the new page component.
+Endpoint
+Method(s)
+Description
+GET /api/skills
+GET (public)
+Called with ?withBadges=true&limit;=100. Returns skills
+with badge summaries. Used by Module A (Skill Areas)
+and Module B (node badge indicators).
+GET /api/badges
+GET (public)
+Called with ?limit=100. Returns all PUBLIC badge
+records including credlyBadgeId, fallbackImageUrl,
+issuer, issueDate. Used by Module A (Badge Grid) and
+Module C (XP calculation).
+GET /api/experience
+GET (public)
+Called with ?limit=200. Returns training classes with
+topicCategory, clientName, mode, startDatetime. Used
+by Module B (tree nodes) and Module C (XP +
+achievements).
+GET /api/expertise/tree
+GET (public)
+Exists but currently returns []. Not actively consumed in
+CR-05 implementation. Reserved for future CR-02
+ExpertiseNode migration.
+
+---PAGE BREAK---
+11. NON-FUNCTIONAL REQUIREMENTS
+11.1 Performance
+ The /skills page must load and render the initial Skills Wallet tab in under 2 seconds on a standard 4G mobile
+connection.
+ All three API calls (skills, badges, experience) must be made in parallel using Promise.all — never
+sequentially.
+ SVG tree layout computation (computeRadialLayout) must complete in under 100ms for the current dataset (5
+domains, 21 topics).
+ Badge images must use lazy loading to avoid blocking the initial paint.
+ Gamification values (XP, level, achievements) must be computed using React useMemo hooks to avoid
+unnecessary recalculation on every render.
+11.2 Compatibility & Dependencies
+ The implementation must use zero new npm dependencies. The SVG tree, pan/zoom, and gamification
+engine are pure React + SVG + Tailwind CSS.
+ The component must be compatible with Next.js 14 App Router and the 'use client' directive.
+ The component must use only APIs available in the existing shadcn/ui and lucide-react packages already
+installed in the project.
+ ResizeObserver is used for SVG canvas sizing — supported in all modern browsers (Chrome 64+, Firefox
+69+, Safari 13.1+).
+11.3 Accessibility
+ All achievement icons must include a title attribute with the achievement label and description.
+ The tab switcher must be keyboard-navigable.
+ Badge images must include descriptive alt text (badge title).
+ The SVG tree is a visual element — a text-based summary of domain/topic counts must be available in the
+right panel as an accessible alternative.
+11.4 Security
+ No sensitive data is displayed on the /skills page. All data is sourced from public API endpoints.
+ Badge verification links use target='_blank' with rel='noopener noreferrer' to prevent tab-napping.
+ No user input is sent to any API from this page. The search filter is client-side only.
+
+---PAGE BREAK---
+12. ACCEPTANCE CRITERIA
+The feature set introduced in CR-05 is considered complete when ALL of the following criteria are verified on the
+live Vercel deployment:
+Module A — Skills Wallet
+1. The /skills page renders two tabs: 'Skills Wallet' (default active) and 'Skill Tree'.
+2. Domain summary chips are visible, correctly colour-coded, and show accurate class counts.
+3. All Credly badges are displayed with their image, title, issuer, and date.
+4. The 'Verify ■' link on each badge opens the correct Credly page in a new tab.
+5. Skill area cards show badge count, class count, badge thumbnails, and domain icon.
+6. The search input filters the Skill Areas section in real time.
+7. Domain chip selection filters the view correctly. Clicking again deselects.
+8. Empty states display gracefully if no badges or skills exist.
+Module B — Skill Tree
+1. The Skill Tree tab renders a radial SVG tree with root, domain, and topic nodes.
+2. All 5 domain nodes are visible with correct colours and class counts.
+3. All 21 topic nodes are visible, correctly mapped to their parent domain.
+4. Clicking a topic or domain node opens the detail panel on the right.
+5. The detail panel shows: node name, class count, badge count (if any), badge thumbnails, and list of training
+classes.
+6. The detail panel × button correctly closes the panel.
+7. Mouse drag pans the tree. Scroll wheel zooms in/out within the 0.4x–2.0x range.
+8. +/− and reset (■) control buttons function correctly.
+9. The domain legend is visible in the bottom-left corner.
+10. Selected and hovered nodes display the glow filter effect.
+11. Badge indicator dot is visible on nodes with linked badges.
+Module C — Gamification
+1. The hero header displays the correct XP total, level number, and level title.
+2. The XP progress bar fills proportionally with a gradient glow matching the current level colour.
+3. 'N XP to [NextLevel]' is shown when not at maximum level.
+4. All 5 achievement icons are visible. Unlocked achievements show amber glow; locked achievements are
+greyed.
+5. All 4 stat chips (Badges, Skills, Classes, Domains) show correct values.
+6. Current level title is rendered in the correct level colour.
+7. No database writes occur when loading this page.
+
+---PAGE BREAK---
+13. IMPACT ON DEPLOYMENT
+Area
+Change
+Impact
+Infrastructure
+None
+No additional services required
+Hosting (Vercel)
+None
+No model change, no new env variables
+Database
+None
+No migrations required
+Prisma Schema
+None
+No schema changes
+npm Dependencies
+None
+Zero new packages
+Files Changed
+1 file: src/app/skills/page.tsx
+Replace existing skills page with delivered
+component
+Build Time
+No significant change
+SVG layout is runtime computation, not build-time
+API Routes
+None
+No new or modified routes
+Environment Vars
+None
+No new environment variables
+Deployment instruction: Copy skills-page.tsx to src/app/skills/page.tsx in the repository. Commit and push to
+the deployment branch. Vercel will auto-deploy. No database migration, no build configuration changes, and
+no environment variable updates are needed.
+
+---PAGE BREAK---
+14. VERSION CONTROL & CR LOG
+Upon approval of CR-05, the main SRS version must be updated to v1.5. This CR must be merged into Sections
+5 (Functional), 8 (Non-Functional), and 10 (Acceptance Criteria). The implementation file (skills-page.tsx) must
+be committed with the message: 'CR-05: Skills Wallet + Skill Tree + Gamification'.
+CR ID
+Target Version
+Summary
+CR-01
+v1.1
+Credly Badge Wallet & Skills Wallet Integration
+CR-02
+v1.2
+Certificate-to-Training Expertise Linking + Visual Skill Tree (concept)
+CR-03
+v1.3
+Event Lead Capture & YAYASAN PENERAJU Course Registration Module
+CR-04
+v1.4
+Client-Facing Showcase Enhancement, Downloadable Profile, Automation & BI Module
+CR-05
+v1.5
+Skills Wallet, Interactive Radial Skill Tree & Gamification Engine
+
+---PAGE BREAK---
+15. STRATEGIC VALUE STATEMENT
+CR-05 transforms the /skills page from a static list of credentials into the most compelling section of the Sulfri
+Trainer Portal — a living, interactive map of verified expertise that communicates depth, breadth, and credibility
+at a glance. The strategic outcomes are:
+Instant Credibility
+Signal
+A client who lands on the Skills page immediately sees a structured map of 5
+domains, 21 topic areas, 46+ classes, and Credly-verified badges — all in a
+single, explorable view. This replaces the need to read a CV or sift through a list
+of courses.
+Expertise Depth
+Communication
+The radial tree makes it visually obvious how Sulfri's expertise is structured —
+not a flat list, but a coherent knowledge architecture. Clients in government
+procurement and corporate L&D; can immediately identify relevant domains
+without asking questions.
+Gamification as
+Professionalism Signal
+The XP level system reframes credentials and training history as a progression
+story. Showing 'Master Trainer' status with a visible progress bar communicates
+continuous professional development in a format that resonates with modern
+digital audiences.
+Zero Maintenance
+Overhead
+The tree and gamification values are derived entirely from existing database
+records. Every new class added in admin, every new Credly badge synced,
+automatically updates the skill tree, the XP bar, and the achievement unlocks —
+no admin action required.
+Zero Infrastructure
+Cost
+The entire module requires no new dependencies, no new database tables, no
+new API routes, and no new hosting configuration. It is a single-file deployment
+into the existing Next.js application.
+ CR-05 | Sulfri Trainer Portal | Confidential
+Base SRS: Personal Brand Edition v1.0 | Target Version: v1.5
+ Implementation file: skills-page.tsx — delivered alongside this document | Pending Approval
+ 
+ — END OF DOCUMENT —
+ 
+---PAGE BREAK---

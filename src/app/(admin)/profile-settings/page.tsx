@@ -130,10 +130,19 @@ export default function ProfileSettingsPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Create object URL for the cropper
-    const objectUrl = URL.createObjectURL(file)
-    setCropImageSrc(objectUrl)
-    setTempFile(file)
+    // Read file as data URL for more reliable loading
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string
+      if (dataUrl) {
+        setCropImageSrc(dataUrl)
+        setTempFile(file)
+      }
+    }
+    reader.onerror = () => {
+      toast.error("Failed to read image file")
+    }
+    reader.readAsDataURL(file)
     
     // Reset input
     e.target.value = ""
@@ -261,16 +270,17 @@ export default function ProfileSettingsPage() {
             {/* Profile Photo with Upload */}
             <div className="flex-shrink-0">
               <div className="relative group">
-                <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-white/20 bg-gradient-to-br from-amber-400 to-orange-500">
+                {/* Portrait Rectangle Photo */}
+                <div className="w-36 h-44 rounded-lg overflow-hidden ring-4 ring-white/20 bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg">
                   {profile?.profilePhotoUrl ? (
                     <img
                       src={profile.profilePhotoUrl}
                       alt={profile.displayName}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-top"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-4xl font-bold text-white">
+                      <span className="text-5xl font-bold text-white">
                         {profile?.displayName?.charAt(0) || "S"}
                       </span>
                     </div>
@@ -280,7 +290,7 @@ export default function ProfileSettingsPage() {
                 {/* Upload Overlay */}
                 <div
                   onClick={!uploading ? triggerFileInput : undefined}
-                  className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                 >
                   {uploading ? (
                     <Loader2 className="w-6 h-6 animate-spin text-white" />
@@ -289,8 +299,8 @@ export default function ProfileSettingsPage() {
                   )}
                 </div>
 
-                {/* HRD Corp Badge */}
-                <div className="absolute -bottom-1 -right-1 px-2 py-0.5 bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center gap-0.5">
+                {/* HRD Corp Badge - repositioned for rectangle */}
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center gap-0.5 shadow-md">
                   <CheckCircle2 className="w-3 h-3" />
                   HRD Corp
                 </div>

@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { HeadMeta } from "@/components/seo/head-meta"
+import { StickyCtaBar, useStickyCtaSettings } from "@/components/mobile/sticky-cta-bar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,7 +44,8 @@ interface BadgeItem {
   skills: Skill[]
 }
 
-export default function BadgesPage() {
+function BadgesPageContent() {
+  const { settings: ctaSettings, loading: ctaLoading } = useStickyCtaSettings()
   const [badges, setBadges] = useState<BadgeItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -302,6 +305,15 @@ export default function BadgesPage() {
         )}
       </div>
 
+      {/* Sticky Mobile CTA */}
+      {!ctaLoading && (
+        <StickyCtaBar
+          whatsappNumber={ctaSettings.whatsappNumber}
+          whatsappPrefillMessage={ctaSettings.whatsappPrefillMessage}
+          enabled={ctaSettings.enabled}
+        />
+      )}
+
       {/* Badge Detail Modal */}
       {selectedBadge && (
         <div 
@@ -431,5 +443,18 @@ export default function BadgesPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function BadgesPage() {
+  return (
+    <>
+      <HeadMeta
+        title="Verified Credentials"
+        description="Professional certifications and digital badges from Credly. Verified credentials in project management, digital transformation, and leadership."
+        canonical="/badges"
+      />
+      <BadgesPageContent />
+    </>
   )
 }

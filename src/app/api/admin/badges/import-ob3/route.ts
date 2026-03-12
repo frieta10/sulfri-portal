@@ -215,18 +215,28 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const isValid = isOB3Format(jsonContent)
-    const credentials = isValid ? parseOB3Credentials(jsonContent) : []
+    // Always attempt to parse regardless of format detection
+    const credentials = parseOB3Credentials(jsonContent)
+    const isValid = credentials.length > 0
+
+    const firstCredential = credentials[0]
+    const sample = firstCredential
+      ? {
+          title:
+            firstCredential.credentialSubject?.achievement?.name ||
+            firstCredential.name ||
+            'Unknown',
+          issuer:
+            typeof firstCredential.issuer === 'string'
+              ? firstCredential.issuer
+              : firstCredential.issuer?.name || firstCredential.issuer?.id || 'Unknown',
+        }
+      : null
 
     return NextResponse.json({
       valid: isValid,
       badgeCount: credentials.length,
-      sample: credentials.length > 0 ? {
-        title: credentials[0].credentialSubject.achievement.name,
-        issuer: typeof credentials[0].issuer === 'string' 
-          ? credentials[0].issuer 
-          : credentials[0].issuer.name,
-      } : null,
+      sample,
     })
 
   } catch (error: any) {

@@ -1,0 +1,276 @@
+Error downloading profile: Error: Failed to download PDF
+    m NextJS
+cbe07f2814f3625c.js:1:59008
+Error in parsing value for '-webkit-text-size-adjust'.  Declaration dropped. ff41359634659fbe.css:2:1248
+Unknown property '-moz-column-gap'.  Declaration dropped. ff41359634659fbe.css:2:14145
+The resource at “https://sulfri-portal.vercel.app/_next/static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2” preloaded with link preload was not used within a few seconds. Make sure all attributes of the preload tag are set correctly. sulfri-portal.vercel.app
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/870000b17332dc67.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/8b94e688af5aaec8.js
+[HTTP/2 200  0ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/auth/providers
+[HTTP/2 200  493ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/auth/csrf
+[HTTP/2 200  265ms]
+
+XHRPOST
+https://sulfri-portal.vercel.app/api/auth/callback/credentials
+[HTTP/2 200  783ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/dashboard?_rsc=1l8gh
+[HTTP/2 200  327ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/aa1ecd12830e41ab.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/ca2d4621ef78533b.js
+[HTTP/2 200  0ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/dashboard?_rsc=1hzz9
+[HTTP/2 200  307ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/aa1ecd12830e41ab.js
+[HTTP/2 200  0ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/auth/signout?_rsc=18t7j
+[HTTP/2 200  271ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/downloads?_rsc=18t7j
+[HTTP/2 200  307ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/profile-settings?_rsc=18t7j
+[HTTP/2 200  338ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/classes?_rsc=18t7j
+[HTTP/2 200  491ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/dashboard?_rsc=18t7j
+[HTTP/2 200  311ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/settings?_rsc=18t7j
+[HTTP/2 200  274ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/courses/new?_rsc=18t7j
+[HTTP/2 404  22ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/classes/new?_rsc=18t7j
+[HTTP/2 200  304ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/analytics?_rsc=18t7j
+[HTTP/2 200  282ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/settings?_rsc=15moa
+[HTTP/2 200  311ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/profile-settings?_rsc=l2qg8
+[HTTP/2 200  314ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/classes/new?_rsc=o5f1c
+[HTTP/2 200  298ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/analytics?_rsc=15moa
+[HTTP/2 200  260ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/downloads?_rsc=nnrbp
+[HTTP/2 200  297ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/classes?_rsc=15moa
+[HTTP/2 200  277ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/dashboard?_rsc=15moa
+[HTTP/2 200  279ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/badges?_rsc=18t7j
+[HTTP/2 200  256ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/skills?_rsc=18t7j
+[HTTP/2 200  278ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/expertise?_rsc=18t7j
+[HTTP/2 304  21ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/expertise?_rsc=oh8t4
+[HTTP/2 304  19ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/expertise?_rsc=585va
+[HTTP/2 304  27ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/expertise?_rsc=1efej
+[HTTP/2 304  19ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/expertise?_rsc=mbdg1
+[HTTP/2 304  23ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/badges?_rsc=15moa
+[HTTP/2 200  269ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/219f8e97a12cb2b5.js
+[HTTP/2 200  0ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/skills?_rsc=15moa
+[HTTP/2 200  246ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/pipeline?_rsc=18t7j
+[HTTP/2 200  262ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/testimonials?_rsc=18t7j
+[HTTP/2 200  274ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/case-studies?_rsc=18t7j
+[HTTP/2 200  281ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/pipeline?_rsc=15moa
+[HTTP/2 200  285ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/testimonials?_rsc=15moa
+[HTTP/2 200  273ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/case-studies?_rsc=15moa
+[HTTP/2 200  281ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/courses?_rsc=18t7j
+[HTTP/2 200  282ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/leads?_rsc=18t7j
+[HTTP/2 200  273ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/qr?_rsc=18t7j
+[HTTP/2 200  294ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/event-settings?_rsc=18t7j
+[HTTP/2 200  275ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/courses?_rsc=15moa
+[HTTP/2 200  273ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/leads?_rsc=15moa
+[HTTP/2 200  261ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/event-settings?_rsc=15moa
+[HTTP/2 200  252ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/qr?_rsc=15moa
+[HTTP/2 200  265ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/showcase-stats?_rsc=18t7j
+[HTTP/2 200  285ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/proposals?_rsc=18t7j
+[HTTP/2 200  259ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/showcase-stats?_rsc=15moa
+[HTTP/2 200  258ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/proposals?_rsc=15moa
+[HTTP/2 200  282ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/email-log?_rsc=18t7j
+[HTTP/2 200  276ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/change-password?_rsc=18t7j
+[HTTP/2 200  294ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/email-log?_rsc=15moa
+[HTTP/2 200  271ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/change-password?_rsc=15moa
+[HTTP/2 200  279ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/admin/settings?_rsc=1y578
+[HTTP/2 200  268ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/1356c8a99140da53.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/99bdbda8357cfe2d.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/1356c8a99140da53.js
+[HTTP/2 200  0ms]
+
+GET
+https://sulfri-portal.vercel.app/_next/static/chunks/99bdbda8357cfe2d.js
+[HTTP/2 200  0ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/admin/settings
+[HTTP/2 500  465ms]
+
+XHRGET
+https://sulfri-portal.vercel.app/api/auth/signout?_rsc=1lq3f
+[HTTP/2 200  313ms]
+
+Error fetching settings: Error: Failed to fetch settings
+    NextJS 11
+99bdbda8357cfe2d.js:1:18250
+XHRPATCH
+https://sulfri-portal.vercel.app/api/admin/settings
+[HTTP/2 500  344ms]
+
+Error saving settings: Error: Failed to save settings
+    NextJS 7
+99bdbda8357cfe2d.js:1:18602
